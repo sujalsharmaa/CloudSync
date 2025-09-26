@@ -150,6 +150,7 @@ Terraform-configuration/.terraform/providers/registry.terraform.io/hashicorp/ran
 Terraform-configuration/.terraform.lock.hcl
 Terraform-configuration/.ssh/id_rsa_terraform_new.pub
 Terraform-configuration/.ssh/id_rsa_terraform_new
+Terraform-configuration\.terraform.lock.hcl
 
 ################################################################################
 # Docker / Containers (optional)
