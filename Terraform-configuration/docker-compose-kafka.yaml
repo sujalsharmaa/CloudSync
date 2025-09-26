@@ -1,0 +1,71 @@
+# docker-compose.yml
+
+services:
+  # Zookeeper service: Kafka's dependency for managing cluster metadata
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0 # Using a stable Confluent Zookeeper image
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181" # Expose Zookeeper client port
+    environment:
+      # Zookeeper configuration
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data # Persistent data for Zookeeper
+      - zookeeper_log:/var/lib/zookeeper/log # Persistent logs for Zookeeper
+
+  # Kafka broker service
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0 # Using a stable Confluent Kafka image
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092" # Expose Kafka's default broker port for external communication
+      # - "9093:9093" # No longer strictly needed if only one external listener
+    environment:
+      # Kafka broker ID (must be unique in a cluster)
+      KAFKA_BROKER_ID: 1
+      # Zookeeper connection string
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Listener configuration for Kafka
+      # PLAINTEXT: For internal communication within the Docker network (kafka:29092)
+      # PLAINTEXT_HOST: For external communication via host port mapping (0.0.0.0:9092)
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      
+      # Advertised listeners tell clients how to connect to the broker
+      # PLAINTEXT://kafka:29092: For internal clients within the Docker network
+      # PLAINTEXT_HOST://YOUR_EC2_PUBLIC_IP:9092: For external clients (like your local kafkajs app)
+
+      ######################################################################################################
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://EC2_PUBLIC_IP_PLACEHOLDER:9092
+      ######################################################################################################
+      # Example with your actual IP:
+     
+      
+      # Internal listener name mapping (if you use security protocols)
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      
+      # Auto-create topics for convenience in development
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" # Automatically create topics if they don't exist
+    volumes:
+      - kafka_data:/var/lib/kafka/data # Persistent data for Kafka
+    depends_on:
+      - zookeeper # Ensure Zookeeper starts before Kafka
+    healthcheck:
+      # Healthcheck should use an internal listener address that is guaranteed to be stable
+      # Using 'kafka:29092' (internal Docker network) is best.
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:29092", "--list"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:
