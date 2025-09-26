@@ -71,7 +71,7 @@ const Navbar: React.FC = () => (
       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-xl bg-gradient-to-br from-indigo-500 to-sky-500">
         <Cloud className="w-5 h-5" />
       </div>
-      <div className="font-bold text-xl text-white tracking-wide">DriveClone</div>
+      <div className="font-bold text-xl text-white tracking-wide">CloudSync</div>
     </div>
 
     <div className="flex items-center gap-6">
