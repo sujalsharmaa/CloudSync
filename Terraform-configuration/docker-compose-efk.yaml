@@ -1,0 +1,76 @@
+
+services:
+  # Elasticsearch Service
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.0 # Use a specific version
+    container_name: elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node # For single-node development setup
+      - xpack.security.enabled=false # Set to true to enable security (recommended for production)
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m # Allocate specific memory to Elasticsearch JVM
+      # If xpack.security.enabled=true, add these:
+      # - ELASTIC_PASSWORD=your_elastic_password # Set a strong password
+    volumes:
+      - esdata:/usr/share/elasticsearch/data # Persist Elasticsearch data
+    networks:
+      - efk_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+  # Kibana Service
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.14.0 # Match Elasticsearch version
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200 # How Kibana connects to Elasticsearch
+      # If Elasticsearch security is enabled:
+      # - ELASTICSEARCH_USERNAME=elastic
+      # - ELASTICSEARCH_PASSWORD=your_elastic_password
+    depends_on:
+      elasticsearch:
+        condition: service_healthy # Wait for Elasticsearch to be healthy
+    networks:
+      - efk_network
+    restart: always
+
+  # Fluent Bit Service
+  fluent-bit:
+    image: fluent/fluent-bit:2.2.2 # Use a specific version
+    container_name: fluent-bit
+    volumes:
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro # Mount your Fluent Bit config
+      # Example for collecting Docker logs:
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    ports:
+      - "24224:24224" # For TCP input plugin, if you use it
+      - "5140:5140/udp" # For Syslog input plugin, if you use it
+    environment:
+      # Ensure Fluent Bit connects to Elasticsearch using the service name
+      - ES_HOST=elasticsearch
+      - ES_PORT=9200
+      # If Elasticsearch security is enabled:
+      # - ES_USERNAME=elastic
+      # - ES_PASSWORD=your_elastic_password
+    depends_on:
+      elasticsearch:
+        condition: service_healthy # Wait for Elasticsearch to be healthy
+    networks:
+      - efk_network
+    restart: always
+
+volumes:
+  esdata: # Docker named volume for Elasticsearch data
+
+networks:
+  efk_network:
+    driver: bridge # Custom bridge network
