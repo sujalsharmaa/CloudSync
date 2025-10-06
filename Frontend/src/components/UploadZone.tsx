@@ -73,7 +73,6 @@ export function UploadZone() {
           headers: {
             'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${token}`,
-
           },
            withCredentials: true,
           onUploadProgress: (progressEvent) => {
@@ -99,6 +98,7 @@ export function UploadZone() {
                 : f
             )
           );
+          
 
           addFile({
             id: uploadFile.id, // Use the same ID for consistency
@@ -110,6 +110,7 @@ export function UploadZone() {
             shared: false,
             owner: 'me',
           });
+
 
           toast({
             title: "Upload completed",

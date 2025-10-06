@@ -33,6 +33,7 @@ interface AuthState {
 
 export interface DriveState {
   files: DriveFile[];
+  // uploadSuccessFlag: Boolean;
   currentFolder: string | null;
   selectedFiles: string[];
   viewMode: 'grid' | 'list';
@@ -52,6 +53,7 @@ export interface DriveState {
 
 export interface DriveActions {
   setFiles: (files: DriveFile[]) => void;
+  // setUploadSuccessFlag: (status: Boolean)=>void;
   setCurrentFolder: (folderId: string | null) => void;
   setSelectedFiles: (fileIds: string[]) => void;
   setActiveView: (view: DriveState['activeView']) => void;
@@ -65,7 +67,7 @@ export interface DriveActions {
   addFile: (file: DriveFile) => void;
   removeFile: (fileId: string) => void;
   updateFile: (fileId: string, updates: Partial<DriveFile>) => void;
-   toggleStar: (fileId: string) => void;
+  toggleStar: (fileId: string) => void;
   fetchFiles: (query: string) => Promise<void>; // Consolidated into a single fetch action
   fetchRecycledFiles: (query: string) => Promise<void>; // Consolidated into a single fetch action
   MoveFileToTrash: (filesToTrash: DriveFile[]) => Promise<void>; // Add this line
@@ -75,6 +77,7 @@ export interface DriveActions {
   toggleStarStatus: (fileId: string, isStarred: boolean) => Promise<void>;
   fetchStarredFiles: () => Promise<void>;
   fetchRecentFiles:()=>Promise<void>;
+  fetchUserStoragePlanAndConsumption:()=>Promise<void>
 }
 
 export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
@@ -82,14 +85,15 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
   activeView: 'my-drive', // Set a default view
   currentFolder: null,
   selectedFiles: [],
+  // uploadSuccessFlag: false,
   viewMode: 'grid',
   searchQuery: '',
   fileTypeFilter: 'all',
   dateFilter: 'all',
   isLoading: false,
   user: null,
-  storageUsed: 8589934592, // 8GB in bytes
-  storageTotal: 16106127360, // 15GB in bytes
+  storageUsed: 0,
+  storageTotal: 0, 
     setActiveView: (view) => {
       set({ activeView: view });
       // When the view changes, trigger the appropriate fetch action
@@ -136,6 +140,46 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
       set({ isLoading: false });
     }
   },
+
+  fetchUserStoragePlanAndConsumption: async()=>{
+    try {
+            const { token } = useAuthStore.getState();
+      const res = await axios.get('http://localhost:8080/api/auth/getStoragePlanAndConsumption', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log(res.data)
+
+
+      let storageTotal = 0;
+
+      switch (res.data.plan) {
+        case "DEFAULT":
+          storageTotal = 1024*1024*1024;
+          break;
+        case "BASIC":
+          storageTotal = 1024*1024*1024*100;
+          break;
+        case "PRO":
+          storageTotal = 1024*1024*1024*1000;
+          break;        
+        case "TEAM":
+          storageTotal = 1024*1024*1024*5000;
+          break;
+        default:
+          storageTotal = 0;
+          break;
+      }
+
+      const storageUsed = res.data.storageConsumed;
+          set({
+      storageTotal,
+      storageUsed,
+    });
+
+    } catch (error) {
+      console.error("Failed to fetch storage plan: ", error);
+    }
+  },
 
   fetchStarredFiles: async () => {
     set({ isLoading: true });

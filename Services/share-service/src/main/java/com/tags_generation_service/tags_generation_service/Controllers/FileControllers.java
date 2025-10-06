@@ -25,6 +25,6 @@ import java.util.zip.ZipOutputStream;
 @RequestMapping("/api")
 @Slf4j
 public class FileControllers {
-    @PostMapping("/share/{fileId}")
-    public Boolean shareFiles()
+ //   @PostMapping("/share/{fileId}")
+//    public Boolean shareFiles();
 }

@@ -116,7 +116,7 @@ resource "aws_key_pair" "deployer_key" {
   public_key = file(".ssh/id_rsa_terraform_new.pub") # Path to your local public SSH key
 }
 resource "aws_s3_bucket" "my_bucket" {
-  bucket = "your-rag-pipeline-bucket"  # Must be globally unique
+  bucket = "your-rag-pipeline-bucket1"  # Must be globally unique
   acl = "private"
 }
 
@@ -141,6 +141,7 @@ resource "aws_instance" "docker_host8" {
               set -eux
               apt-get update
               apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
+              apt install dos2unix -y
               # Docker
               install -m 0755 -d /etc/apt/keyrings
               curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -229,10 +230,12 @@ resource "aws_instance" "docker_host8" {
 
     inline = [
        "sleep 5",
+      "sudo dos2unix changeIP.sh",
+      "sleep 10",
       "sudo chmod +x changeIP.sh && ./changeIP.sh",
        "sleep 10",
       # "sudo docker compose -f docker-compose.yaml up -d",
-      # "sleep 8",
+      "sleep 8",
       "sudo docker run -d -p 6379:6379 redis/redis-stack-server",
       "sleep 8",
       "sudo docker compose -f docker-compose-kafka.yaml up -d",

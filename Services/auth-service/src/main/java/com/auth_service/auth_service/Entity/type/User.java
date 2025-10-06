@@ -1,11 +1,8 @@
 package com.auth_service.auth_service.Entity.type;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-
 import java.time.LocalDateTime;
 
 @Data
@@ -35,4 +32,7 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING)   // ✅ store enum as text ("DEFAULT","BASIC" etc.)
+    @Column(name = "plan", nullable = false)
+    private Plan plan = Plan.DEFAULT; // ✅ default value in Java (not SQL)
 }

@@ -20,11 +20,9 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/api/genai")
 @RequiredArgsConstructor
-//@CrossOrigin(origins = "http://localhost:5173/home") // Add this annotation
 public class  GenAIController {
 
     private final UploadService uploadService;
-//    private final SearchService searchService;
 
     @PostMapping("/process")
     public ResponseEntity<ProcessedDocument> processFile(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal Jwt jwt) {
@@ -35,6 +33,7 @@ public class  GenAIController {
             log.warn("Unauthorized upload attempt (no jwt)");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
         try {
             log.info("Receiving file for processing: {}", file.getOriginalFilename());
             log.info("Current user id (principal): {}", userId);
@@ -42,7 +41,8 @@ public class  GenAIController {
             ProcessedDocument result = uploadService.processFile(
                     file.getInputStream(),
                     file.getOriginalFilename(),
-                    userId
+                    userId,
+                    jwt
             );
 
             if ("unsafe".equalsIgnoreCase(result.getSecurityStatus())) {

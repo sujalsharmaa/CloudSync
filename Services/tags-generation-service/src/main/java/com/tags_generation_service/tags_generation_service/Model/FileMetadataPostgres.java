@@ -1,5 +1,6 @@
 package com.tags_generation_service.tags_generation_service.Model;
 
+import com.rometools.utils.Strings;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -76,4 +77,5 @@ public class FileMetadataPostgres {
     @Column(name = "modifiedAt")
     @Temporal(TemporalType.TIMESTAMP)
     private Date modifiedAt;
+
 }
