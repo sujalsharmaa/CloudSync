@@ -29,7 +29,7 @@ export function DriveHeader() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="h-16 border-b bg-background px-6 flex items-center justify-between">
+    <header className="h-16 border-b bg-background px-6 flex items-center justify-between relative z-10">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
           <img

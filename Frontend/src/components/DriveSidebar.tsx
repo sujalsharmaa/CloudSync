@@ -38,7 +38,7 @@ export function DriveSidebar() {
   ];
 
   return (
-    <aside className="w-64 h-screen sticky top-0 border-r bg-background p-4 flex flex-col overflow-hidden min-h-0">
+    <aside className="w-64 h-screen sticky top-0 border-r bg-background p-4 flex flex-col overflow-hidden min-h-0 relative z-10">
       <Button className="mb-6 w-full justify-start gap-3 h-12 bg-gray-800 hover:bg-gray-600 shadow-hover transition-smooth text-white">
         <Plus className="w-5 h-5" />
         New

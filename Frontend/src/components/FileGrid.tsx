@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import SplashCursor from "./SplashCursor"; // Assuming the path is correct
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -191,15 +192,36 @@ export function FileGrid() {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4">
+                  <div className="relative"> {/* ADD relative HERE */}
+      {/* ADD SPLASHCURSOR FOR BACKGROUND EFFECT 
+        Use subtle settings and absolute positioning
+      */}
+      <div className="absolute inset-0 z-0 overflow-hidden rounded-lg pointer-events-none">
+        <SplashCursor
+          SIM_RESOLUTION={256}      // Lowered resolution for performance
+          DYE_RESOLUTION={1024}     // Lowered resolution for performance
+          DENSITY_DISSIPATION={0.3}
+          VELOCITY_DISSIPATION={0.8}
+          PRESSURE={0.5}
+          CURL={30}
+          SPLAT_RADIUS={0.15}       // Smaller radius
+          SPLAT_FORCE={4000}        // Lower force
+          SHADING={false}
+          COLOR_UPDATE_SPEED={2.5}
+          BACK_COLOR={{ r: 0.0, g: 0.0, b: 0.0 }}
+          TRANSPARENT={true}
+        />
+      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 relative z-10">
       {filteredFiles.map((file) => {
         const isSelected = selectedFiles.includes(file.id);
 
         return (
+
           <Card
             key={file.id}
             className={cn(
-              "p-4 hover:shadow-hover transition-smooth cursor-pointer group animate-scale-in",
+              "p-4 hover:shadow-hover transition-smooth cursor-pointer group animate-scale-in  relative z-10",
               isSelected && "ring-2 ring-primary"
             )}
             onClick={() => toggleFileSelection(file.id)}
@@ -284,6 +306,7 @@ export function FileGrid() {
         );
       })}
       <FileActionsToolbar />
+    </div>
     </div>
   );
 }

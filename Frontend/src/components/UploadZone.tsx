@@ -152,9 +152,10 @@ export function UploadZone() {
       <Card
         className={`
           border-2 border-dashed p-8 text-center transition-smooth cursor-pointer
+          relative z-10
           ${isDragOver 
-            ? 'border-primary bg-drive-blue-light' 
-            : 'border-border hover:border-primary/50 hover:bg-muted/20'
+            ? '' 
+            : ''
           }
         `}
         onDragOver={handleDragOver}

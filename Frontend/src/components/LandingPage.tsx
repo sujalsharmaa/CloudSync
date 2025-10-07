@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import UserStatus from "./UserStatus";
 import SplashCursor from "./SplashCursor";
+import { Typewriter } from "react-simple-typewriter"
 
 type Plan = {
   id: string;
@@ -33,16 +34,16 @@ const PriceBadge: React.FC<{ plan: Plan }> = ({ plan }) => {
       */}
       <div className="absolute inset-0 z-0">
         <SplashCursor
-          SIM_RESOLUTION={512}
-          DYE_RESOLUTION={2048}
+          SIM_RESOLUTION={256}      // Lowered resolution for performance
+          DYE_RESOLUTION={1024}     // Lowered resolution for performance
           DENSITY_DISSIPATION={0.3}
-          VELOCITY_DISSIPATION={0.9}
-          PRESSURE={0.6}
-          CURL={45}
-          SPLAT_RADIUS={0.2}
-          SPLAT_FORCE={6000}
+          VELOCITY_DISSIPATION={0.8}
+          PRESSURE={0.5}
+          CURL={30}
+          SPLAT_RADIUS={0.15}       // Smaller radius
+          SPLAT_FORCE={4000}        // Lower force
           SHADING={false}
-          COLOR_UPDATE_SPEED={2}
+          COLOR_UPDATE_SPEED={2.5}
           BACK_COLOR={{ r: 0.0, g: 0.0, b: 0.0 }}
           TRANSPARENT={false}
         />
@@ -125,15 +126,34 @@ const Hero: React.FC = () => (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-indigo-900/10 to-transparent rounded-full opacity-60 blur-[100px] z-0 animate-pulse-slow" />
     <style>{`
       @keyframes pulse-slow {
-        0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
-        50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.7; }
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50% { transform: translate(-50%, -50%) scale(1.05); }
       }
     `}</style>
     
     <div className="relative z-10">
-      <h1 className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg">
-        Secure, AI-powered storage for your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-sky-400">digital life</span>.
-      </h1>
+<h1 className="text-5xl md:text-6xl font-extrabold leading-tight text-white drop-shadow-lg">
+    Secure, AI-powered storage for your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-sky-400">
+        {/*
+          PROBLEM: The word "life" was here,
+          and the Typewriter was just typing "Digital", "Personal", etc.
+          You need to include "life" inside the words array.
+        */}
+        <Typewriter
+            words={[
+                "Digital life", // COMBINE THE WORD WITH THE SUFFIX
+                "Personal life",
+                "Professional life",
+            ]}
+            loop={0}
+            cursor
+            cursorStyle="_"
+            typeSpeed={90}
+            deleteSpeed={60}
+            delaySpeed={2000}
+        />
+    </span>
+</h1>
       <p className="mt-6 text-xl text-slate-300 max-w-xl">
         DriveClone offers robust, multi-regional cloud storage with AI-powered security scans and a global CDN for lightning-fast access.
       </p>
