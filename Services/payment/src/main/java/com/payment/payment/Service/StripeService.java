@@ -1,6 +1,6 @@
 package com.payment.payment.Service;
 
-import com.payment.payment.Dto.ProductRequest;
+import com.payment.payment.Dto.ServiceRequest;
 import com.payment.payment.Dto.StripeResponse;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+
 @Service
 public class StripeService {
 
@@ -19,21 +20,33 @@ public class StripeService {
     @Value("${stripe.secretKey}")
     private String secretKey;
 
-    public StripeResponse checkoutProducts(ProductRequest productRequest) {
+    public long getQuantity(ServiceRequest serviceRequest){
+        int Quantity = 0;
+        switch (serviceRequest.getPlan()){
+            case PRO -> Quantity=1000;
+            case BASIC -> Quantity=100;
+            case TEAM -> Quantity=5000;
+            case DEFAULT -> Quantity=1;
+            case null, default -> Quantity=1;
+        }
+        return Quantity;
+    }
+
+    public StripeResponse checkoutProducts(ServiceRequest serviceRequest) {
         // Set your secret key. Remember to switch to your live secret key in production!
         Stripe.apiKey = secretKey;
 
         // Create a PaymentIntent with the order amount and currency
         SessionCreateParams.LineItem.PriceData.ProductData productData =
                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                        .setName(productRequest.getName())
+                        .setName(String.valueOf(serviceRequest.getPlan()))
                         .build();
 
         // Create new line item with the above product data and associated price
         SessionCreateParams.LineItem.PriceData priceData =
                 SessionCreateParams.LineItem.PriceData.builder()
-                        .setCurrency(productRequest.getCurrency() != null ? productRequest.getCurrency() : "USD")
-                        .setUnitAmount(productRequest.getAmount())
+                        .setCurrency("USD")
+                        .setUnitAmount(serviceRequest.getAmount())
                         .setProductData(productData)
                         .build();
 
@@ -41,7 +54,7 @@ public class StripeService {
         SessionCreateParams.LineItem lineItem =
                 SessionCreateParams
                         .LineItem.builder()
-                        .setQuantity(productRequest.getQuantity())
+                        .setQuantity(getQuantity(serviceRequest))
                         .setPriceData(priceData)
                         .build();
 
@@ -49,8 +62,8 @@ public class StripeService {
         SessionCreateParams params =
                 SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.PAYMENT)
-                        .setSuccessUrl("http://localhost:8080/success")
-                        .setCancelUrl("http://localhost:8080/cancel")
+                        .setSuccessUrl("http://localhost:5173/paymentSuccess")
+                        .setCancelUrl("http://localhost:5173/paymentFailure")
                         .addLineItem(lineItem)
                         .build();
 
@@ -69,7 +82,6 @@ public class StripeService {
                     .message("Payment session could not be created")
                     .build();
         }
-
 
         return StripeResponse
                 .builder()

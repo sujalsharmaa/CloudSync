@@ -8,6 +8,9 @@ import NotFound from "./pages/NotFound";
 import LandingPage from "./components/LandingPage";
 import ProtectedRoute from "./ProtectedRoute"; // Import the new component
 import RedirectIfAuthenticated from "./components/RedirectIfAuthenticated";
+import { StoragePricingPlan } from "./pages/StoragePricingPlan";
+import  PaymentSuccess  from "./pages/PaymentPageSuccess";
+import  PaymentCancelled  from "./pages/PaymentPageFailure";
 
 const queryClient = new QueryClient();
 
@@ -25,13 +28,38 @@ const App = () => (
             </RedirectIfAuthenticated>
           }
         />
+                <Route
+          path="/storagePlans"
+          element={
+            <ProtectedRoute>
+              <StoragePricingPlan/>
+              </ProtectedRoute>
+          }
+        />
         <Route 
           path="/home" 
           element={
-            // <ProtectedRoute>
-            //   <Index />
-            // </ProtectedRoute>
-            <Index/>
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+
+          } 
+        />
+                <Route 
+          path="/paymentSuccess" 
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess/>
+            </ProtectedRoute>
+
+          } 
+        />
+                <Route 
+          path="/paymentFailure" 
+          element={
+            <ProtectedRoute>
+          <PaymentCancelled/>
+            </ProtectedRoute>
 
           } 
         />

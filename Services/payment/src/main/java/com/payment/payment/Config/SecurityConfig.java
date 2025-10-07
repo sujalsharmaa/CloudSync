@@ -36,7 +36,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/*").authenticated()
+                        // NEW: Explicitly permit access to a Stripe webhook endpoint.
+                        // This path MUST be unauthenticated as Stripe servers don't send a JWT.
+                        .requestMatchers("/stripe/webhook").permitAll()
+                        // Explicitly secure the payment initiation endpoint (which requires a user's JWT)
+                        .requestMatchers("/service/v1/checkout").authenticated()
+                        // Keep other API paths authenticated for clarity
+                        .requestMatchers("/api/**").authenticated()
+                        // Catch all other requests (default to authenticated)
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

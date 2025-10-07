@@ -50,6 +50,11 @@ export interface DriveState {
   storageUsed: number;
   storageTotal: number;
 }
+// Define the expected structure of the successful response data
+export interface PaymentSessionResponse {
+  sessionUrl: string;
+  // Add other properties if they exist, e.g., 'sessionId': string
+}
 
 export interface DriveActions {
   setFiles: (files: DriveFile[]) => void;
@@ -78,6 +83,8 @@ export interface DriveActions {
   fetchStarredFiles: () => Promise<void>;
   fetchRecentFiles:()=>Promise<void>;
   fetchUserStoragePlanAndConsumption:()=>Promise<void>
+  handlePayment:(Plan:string,price: number)=>Promise<PaymentSessionResponse>
+
 }
 
 export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
@@ -237,6 +244,27 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
     files: state.files.map(f => f.id === fileId ? { ...f, ...updates } : f)
   })),
 
+  handlePayment: async (Plan: string, price: number): Promise<PaymentSessionResponse | undefined> => {
+    try {
+      const { token } = useAuthStore.getState();
+        const res = await axios.post("http://localhost:8084/service/v1/checkout",
+          {
+            Plan,
+            amount: price
+          },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+        )
+        
+        return res.data
+    } catch (error) {
+      console.error("Failed to handle payment ", error);
+    }
+  },
 
   toggleStarStatus: async (fileId, isStarred) => {
     try {

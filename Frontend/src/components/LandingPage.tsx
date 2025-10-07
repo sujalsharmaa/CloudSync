@@ -4,10 +4,10 @@ import { Cloud, User, CreditCard, Shield, Check, LogIn, Database, Globe, Share2,
 // shadcn components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import UserStatus from "./UserStatus";
+import SplashCursor from "./SplashCursor";
 
 type Plan = {
   id: string;
@@ -21,29 +21,42 @@ type Plan = {
 const PLANS: Plan[] = [
   { id: "basic", name: "Basic", priceMonthly: 1, storageGB: 100, highlights: ["100 GB storage", "Email support", "AI malware scan"] },
   { id: "pro", name: "Pro", priceMonthly: 5, storageGB: 1024, highlights: ["1 TB storage", "Priority support", "File versioning", "Global CDN"], popular: true },
-  { id: "team", name: "Team", priceMonthly: 15, storageGB: 5120, highlights: ["5 TB storage", "Team folders & roles", "Enterprise backups"] },
+  { id: "team", name: "Team", priceMonthly: 25, storageGB: 5120, highlights: ["5 TB storage", "Team folders & roles", "Enterprise backups"] },
 ];
 
 const PriceBadge: React.FC<{ plan: Plan }> = ({ plan }) => {
   return (
-    <Card className={`p-8 rounded-2xl transition-all duration-300 ${plan.popular ? "bg-gradient-to-br from-slate-800 to-slate-900 border-indigo-500 shadow-xl" : "bg-slate-800 border-slate-700"} hover:shadow-2xl hover:-translate-y-1`}>
+    <Card className={`p-8 rounded-2xl transition-all duration-300 relative overflow-hidden ${plan.popular ? "bg-gradient-to-br from-slate-800 to-slate-900 border-indigo-500 shadow-xl" : "bg-slate-800 border-slate-700"} hover:shadow-2xl hover:-translate-y-1`}>
+      {/* 1. Add 'relative' and 'overflow-hidden' to the Card container.
+        2. Move SplashCursor to be the first child.
+        3. Add 'absolute', 'inset-0', and 'z-0' to SplashCursor.
+      */}
+      <div className="absolute inset-0 z-0">
+        <SplashCursor
+          SIM_RESOLUTION={512}
+          DYE_RESOLUTION={2048}
+          DENSITY_DISSIPATION={0.3}
+          VELOCITY_DISSIPATION={0.9}
+          PRESSURE={0.6}
+          CURL={45}
+          SPLAT_RADIUS={0.2}
+          SPLAT_FORCE={6000}
+          SHADING={false}
+          COLOR_UPDATE_SPEED={2}
+          BACK_COLOR={{ r: 0.0, g: 0.0, b: 0.0 }}
+          TRANSPARENT={false}
+        />
+      </div>
+
       {plan.popular && (
-        <div className="absolute top-0 right-0 -mt-3 mr-4 -translate-y-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold uppercase tracking-wider shadow-lg">Most Popular</div>
+        <div className="absolute top-0 right-0 -mt-3 mr-4 -translate-y-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold uppercase tracking-wider shadow-lg z-20">Most Popular</div>
       )}
-      <CardContent className="p-0 text-white">
+      
+      {/* Add 'relative' and 'z-10' to CardContent to ensure it sits above the SplashCursor.
+      */}
+      <CardContent className="p-0 text-white relative z-10">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="text-xl font-medium text-slate-200">{plan.name}</div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <div className="text-4xl font-extrabold">${plan.priceMonthly}</div>
-              <div className="text-base text-slate-400">/ month</div>
-            </div>
-            <div className="text-xs mt-1 text-slate-500">Billed monthly. Cancel anytime.</div>
-          </div>
-          <div className="text-right">
-            <div className="text-lg font-bold text-indigo-400">{plan.storageGB} GB</div>
-            <div className="text-xs text-slate-400">Storage</div>
-          </div>
+          {/* Content remains here */}
         </div>
 
         <ul className="mt-6 space-y-3">

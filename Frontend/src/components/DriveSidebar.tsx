@@ -13,8 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useDriveStore } from '@/stores/driveStore';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ import navigate
 
 export function DriveSidebar() {
+  const navigate = useNavigate(); // ✅ create navigate instance
   const { storageUsed, storageTotal, activeView, setActiveView, fetchUserStoragePlanAndConsumption } = useDriveStore();
 
   useEffect(() => {
@@ -74,7 +76,9 @@ export function DriveSidebar() {
         </div>
 
 
-        <Button variant="outline" className="w-full text-sm h-9">
+        <Button 
+        onClick={() => navigate('/storagePlans')}
+        variant="outline" className="w-full text-sm h-9">
           Buy storage
         </Button>
       </div>
