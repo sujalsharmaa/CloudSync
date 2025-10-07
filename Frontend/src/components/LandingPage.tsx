@@ -26,7 +26,7 @@ const PLANS: Plan[] = [
 
 const PriceBadge: React.FC<{ plan: Plan }> = ({ plan }) => {
   return (
-    <Card className={`p-8 rounded-2xl transition-all duration-300 relative overflow-hidden ${plan.popular ? "bg-gradient-to-br from-slate-800 to-slate-900 border-indigo-500 shadow-xl" : "bg-slate-800 border-slate-700"} hover:shadow-2xl hover:-translate-y-1`}>
+    <Card className={`p-8 rounded-2xl transition-all relative overflow-hidden ${plan.popular ? "bg-gradient-to-br from-slate-800 to-slate-900 border-indigo-500 shadow-xl" : "bg-slate-800 border-slate-700"} hover:shadow-2xl hover:-translate-y-1`}>
       {/* 1. Add 'relative' and 'overflow-hidden' to the Card container.
         2. Move SplashCursor to be the first child.
         3. Add 'absolute', 'inset-0', and 'z-0' to SplashCursor.
