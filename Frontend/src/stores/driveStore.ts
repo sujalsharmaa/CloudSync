@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { StringifyOptions } from 'querystring';
 
 export interface DriveFile {
   id: string;
@@ -42,6 +43,7 @@ export interface DriveState {
   fileTypeFilter: 'all' | 'folders' | 'documents' | 'images' | 'videos' | 'presentations' | 'spreadsheets';
   dateFilter: 'all' | 'today' | 'week' | 'month' | 'year';
   isLoading: boolean;
+  plan: string;
   user: {
     name: string;
     email: string;
@@ -100,7 +102,8 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
   isLoading: false,
   user: null,
   storageUsed: 0,
-  storageTotal: 0, 
+  storageTotal: 0,
+  plan: 'DEFAULT',  
     setActiveView: (view) => {
       set({ activeView: view });
       // When the view changes, trigger the appropriate fetch action
@@ -148,45 +151,48 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
     }
   },
 
-  fetchUserStoragePlanAndConsumption: async()=>{
-    try {
-            const { token } = useAuthStore.getState();
-      const res = await axios.get('http://localhost:8080/api/auth/getStoragePlanAndConsumption', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log(res.data)
+
+  fetchUserStoragePlanAndConsumption: async()=>{
+    try {
+            const { token } = useAuthStore.getState();
+      const res = await axios.get('http://localhost:8080/api/auth/getStoragePlanAndConsumption', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log(res.data)
 
 
-      let storageTotal = 0;
+      let storageTotal = 0;
+      const userPlan = res.data.plan; // <-- Store the plan locally
 
-      switch (res.data.plan) {
-        case "DEFAULT":
-          storageTotal = 1024*1024*1024;
-          break;
-        case "BASIC":
-          storageTotal = 1024*1024*1024*100;
-          break;
-        case "PRO":
-          storageTotal = 1024*1024*1024*1000;
-          break;        
-        case "TEAM":
-          storageTotal = 1024*1024*1024*5000;
-          break;
-        default:
-          storageTotal = 0;
-          break;
-      }
+      switch (userPlan) {
+        case "DEFAULT":
+          storageTotal = 1024*1024*1024;
+          break;
+        case "BASIC":
+          storageTotal = 1024*1024*1024*100;
+          break;
+        case "PRO":
+          storageTotal = 1024*1024*1024*1000;
+          break;
+        case "TEAM":
+          storageTotal = 1024*1024*1024*5000;
+          break;
+        default:
+          storageTotal = 0;
+          break;
+      }
 
-      const storageUsed = res.data.storageConsumed;
-          set({
+      const storageUsed = res.data.storageConsumed;
+          set({
       storageTotal,
       storageUsed,
+      plan: userPlan, // <-- SAVE THE PLAN TO THE STORE
     });
 
-    } catch (error) {
-      console.error("Failed to fetch storage plan: ", error);
-    }
-  },
+    } catch (error) {
+      console.error("Failed to fetch storage plan: ", error);
+    }
+  },
 
   fetchStarredFiles: async () => {
     set({ isLoading: true });
@@ -247,9 +253,11 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
   handlePayment: async (Plan: string, price: number): Promise<PaymentSessionResponse | undefined> => {
     try {
       const { token } = useAuthStore.getState();
+             console.log(Plan)
         const res = await axios.post("http://localhost:8084/service/v1/checkout",
+   
           {
-            Plan,
+            plan: Plan,
             amount: price
           },
         {

@@ -34,8 +34,8 @@ const PriceBadge: React.FC<{ plan: Plan }> = ({ plan }) => {
       */}
       <div className="absolute inset-0 z-0">
         <SplashCursor
-          SIM_RESOLUTION={256}      // Lowered resolution for performance
-          DYE_RESOLUTION={1024}     // Lowered resolution for performance
+          SIM_RESOLUTION={256}      // Lowered resolution for performance //256
+          DYE_RESOLUTION={1024}     // Lowered resolution for performance //1024
           DENSITY_DISSIPATION={0.3}
           VELOCITY_DISSIPATION={0.8}
           PRESSURE={0.5}
@@ -47,6 +47,21 @@ const PriceBadge: React.FC<{ plan: Plan }> = ({ plan }) => {
           BACK_COLOR={{ r: 0.0, g: 0.0, b: 0.0 }}
           TRANSPARENT={false}
         />
+{/* <SplashCursor
+    SIM_RESOLUTION={64}      // Drastically reduced grid size for performance
+    DYE_RESOLUTION={256}     // Significantly reduced visual texture size
+    DENSITY_DISSIPATION={0.3}
+    VELOCITY_DISSIPATION={0.95} // Movement fades faster
+    PRESSURE={0.5}
+    PRESSURE_ITERATIONS={10} // Fewer calculation steps for pressure
+    CURL={15}                // Calmer, simpler fluid motion
+    SPLAT_RADIUS={0.15}
+    SPLAT_FORCE={1500}       // Less intense splashes
+    SHADING={false}          // Keep this false for a performance boost
+    COLOR_UPDATE_SPEED={2.5}
+    BACK_COLOR={{ r: 0.0, g: 0.0, b: 0.0 }}
+    TRANSPARENT={false}
+/> */}
       </div>
 
       {plan.popular && (

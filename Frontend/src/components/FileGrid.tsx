@@ -197,7 +197,7 @@ export function FileGrid() {
         Use subtle settings and absolute positioning
       */}
       <div className="absolute inset-0 z-0 overflow-hidden rounded-lg pointer-events-none">
-        <SplashCursor
+        {/* <SplashCursor
           SIM_RESOLUTION={256}      // Lowered resolution for performance
           DYE_RESOLUTION={1024}     // Lowered resolution for performance
           DENSITY_DISSIPATION={0.3}
@@ -210,7 +210,7 @@ export function FileGrid() {
           COLOR_UPDATE_SPEED={2.5}
           BACK_COLOR={{ r: 0.0, g: 0.0, b: 0.0 }}
           TRANSPARENT={true}
-        />
+        /> */}
       </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 relative z-10">
       {filteredFiles.map((file) => {
