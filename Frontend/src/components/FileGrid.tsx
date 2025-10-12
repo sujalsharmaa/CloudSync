@@ -33,18 +33,54 @@ const formatFileSize = (bytes?: number) => {
 };
 
 const formatDate = (dateString?: string) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "";
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
 
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+  const now = new Date();
+  const diffTime = now.getTime() - date.getTime(); // Difference in milliseconds
+  const oneMinute = 1000 * 60;
+  const oneHour = 1000 * 60 * 60;
+  const oneDay = 1000 * 60 * 60 * 24;
 
-  return date.toLocaleDateString();
+  // --- 1. Check for "Just now" and "X mins/hours ago" (Same calendar day) ---
+  
+  // Normalize both dates to the start of their respective days (local timezone)
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  
+  const dateDay = startOfDay(date);
+  const nowDay = startOfDay(now);
+
+  if (dateDay === nowDay) {
+    // If the file's day is today (even if the time zone shift makes it appear negative/small)
+    if (diffTime < oneMinute) {
+      return "Just now";
+    }
+    if (diffTime < oneHour) {
+      const diffMinutes = Math.floor(diffTime / oneMinute);
+      return `${diffMinutes} mins ago`;
+    }
+    const diffHours = Math.floor(diffTime / oneHour);
+    return `${diffHours} hours ago`;
+  }
+
+  // --- 2. Check for "Yesterday" ---
+
+  if (nowDay - dateDay === oneDay) {
+    return "Yesterday";
+  }
+
+  // --- 3. Check for "X days/weeks ago" ---
+
+  // Use Math.ceil(diffTime / oneDay) only for past calendar days, 
+  // but we already handled "today" and "yesterday" accurately.
+  const diffDays = Math.floor(diffTime / oneDay);
+
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+
+  // Fallback to localized date format
+  return date.toLocaleDateString();
 };
 
 
@@ -63,7 +99,9 @@ export function FileGrid() {
     MoveFileToTrash,
     activeView, // Add activeView here
      fetchStarredFiles,
-    fetchRecycledFiles
+    fetchRecycledFiles,
+    addFile,
+    //connectWebSocket,
   } = useDriveStore();
 
   const handleMoveToTrash = (fileToTrash: DriveFile) => {
@@ -72,6 +110,7 @@ export function FileGrid() {
 };
 
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   
  useEffect(() => {
     if (activeView === 'trash') {
@@ -81,7 +120,7 @@ export function FileGrid() {
     } else {
       fetchFiles(debouncedSearchQuery);
     }
-  }, [activeView, debouncedSearchQuery, fetchFiles, fetchRecycledFiles, fetchStarredFiles]);
+  }, [activeView, debouncedSearchQuery, fetchFiles, fetchRecycledFiles, fetchStarredFiles,addFile]);
 
 
   const filteredFiles = (files ?? []).filter((file: DriveFile) => {
@@ -145,6 +184,14 @@ export function FileGrid() {
     return matchesType && matchesDate;
   });
 
+      const sortedFiles = filteredFiles.slice().sort((a, b) => {
+        const dateA = a.processedAt ? new Date(a.processedAt).getTime() : 0;
+        const dateB = b.processedAt ? new Date(b.processedAt).getTime() : 0;
+        
+        // Sort descending (b - a) so the newer file (larger timestamp) comes first
+        return dateB - dateA; 
+    });
+
   if (viewMode === "list") {
     return (
       <div className="space-y-1">
@@ -154,9 +201,9 @@ export function FileGrid() {
           <div>Owner</div>
           <div>Last modified</div>
           <div>File size</div>
-        </div>
+        </div>        
 
-        {filteredFiles.map((file) => {
+        {sortedFiles.map((file) => {
           const isSelected = selectedFiles.includes(file.id);
 
           return (
@@ -164,21 +211,27 @@ export function FileGrid() {
               key={file.id}
               className={cn(
                 "grid grid-cols-[auto_1fr_120px_120px_auto] gap-4 px-4 py-3 hover:bg-muted/50 rounded-lg transition-smooth group cursor-pointer",
-                isSelected && "bg-drive-blue-light"
+                isSelected && "bg-muted/50"
               )}
               onClick={() => toggleFileSelection(file.id)}
             >
               <Checkbox
                 checked={isSelected}
                 onChange={() => toggleFileSelection(file.id)}
-                className="mt-0.5 opacity-0 group-hover:opacity-100 transition-smooth"
+                className="mt-2 opacity-100 group-hover:opacity-100 transition-smooth"
               />
 
               <div className="flex items-center gap-3 min-w-0">
+                              <div className="flex items-center gap-3 min-w-0">
                 <FilePreview file={file} size="sm" />
                 <span className="truncate text-foreground">{file.fileName ?? "Unnamed"}</span>
                 {file.starred && <Star className="w-4 h-4 text-drive-yellow fill-current flex-shrink-0" />}
                 {file.shared && <Share2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+              </div>
+                {/* <FilePreview file={file} size="sm" />
+                <span className="truncate text-foreground">{file.fileName ?? "Unnamed"}</span>
+                {file.starred && <Star className="w-4 h-4 text-drive-yellow fill-current flex-shrink-0" />}
+                {file.shared && <Share2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />} */}
               </div>
 
               <div className="text-sm text-muted-foreground truncate">{file.owner || "You"}</div>
@@ -187,6 +240,7 @@ export function FileGrid() {
             </div>
           );
         })}
+        <FileActionsToolbar />
       </div>
     );
   }
@@ -213,7 +267,7 @@ export function FileGrid() {
         /> */}
       </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-4 relative z-10">
-      {filteredFiles.map((file) => {
+      {sortedFiles.map((file) => {
         const isSelected = selectedFiles.includes(file.id);
 
         return (
@@ -226,6 +280,7 @@ export function FileGrid() {
             )}
             onClick={() => toggleFileSelection(file.id)}
           >
+       
             <div className="flex items-start justify-between mb-3">
               <FilePreview file={file} size="lg" />
 
@@ -284,21 +339,14 @@ export function FileGrid() {
             <div className="space-y-1">
               <h3 className="font-medium text-sm text-foreground truncate">{file.fileName ?? "Unnamed"}</h3>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                
+                <span>•</span>
                 <span>{formatDate(file.processedAt)}</span>
                 {file.size && (
                   <>
                     <span>•</span>
                     <span>{formatFileSize(file.size)}</span>
                   </>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1 mt-2">
-                {file.shared && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Share2 className="w-3 h-3" />
-                    <span>Shared</span>
-                  </div>
                 )}
               </div>
             </div>

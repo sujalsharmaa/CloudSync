@@ -1,11 +1,12 @@
 import { DriveHeader } from '@/components/DriveHeader';
 import { DriveSidebar } from '@/components/DriveSidebar';
 import { FileGrid } from '@/components/FileGrid';
+import { MetadataDiscoveryCard } from '@/components/MetaDataDiscoveryCard';
 import { UploadZone } from '@/components/UploadZone';
 import { useDriveStore } from '@/stores/driveStore';
 
 const Index = () => {
-  const { searchQuery, fileTypeFilter, dateFilter } = useDriveStore();
+  const { searchQuery, fileTypeFilter, dateFilter,setSearchQuery  } = useDriveStore();
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -15,6 +16,7 @@ const Index = () => {
         <DriveSidebar />
         
         <main className="flex-1 overflow-auto">
+               <MetadataDiscoveryCard onSearch={setSearchQuery}/>
           <div className="p-6 space-y-6">
             <UploadZone />
             

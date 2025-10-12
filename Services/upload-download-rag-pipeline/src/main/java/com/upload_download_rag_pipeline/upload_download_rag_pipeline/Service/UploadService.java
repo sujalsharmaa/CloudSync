@@ -114,7 +114,8 @@ public class UploadService {
                     // 8. ASYNCHRONOUSLY trigger the metadata processing service
                     // Note: If s3Service.uploadFile already computes file size, use it.
                     // Since we used Files.copy, we already have the size in 'newFileSize'.
-                    queueService.publishMetadataRequest(fileName, fileType, s3UploadResult.fileUrl(), userId, newFileSize);
+                    queueService.publishMetadataRequest(fileName, fileType, s3UploadResult.fileUrl(), userId, newFileSize, token.getSubject());
+
 
                     // 9. Return a success response to the user
                     return ProcessedDocument.builder()

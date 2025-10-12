@@ -18,8 +18,8 @@ public class QueueService {
      * Publishes a message to a Kafka topic to trigger asynchronous metadata processing.
      * The message contains a JSON string with the file details.
      */
-    public void publishMetadataRequest(String fileName, String fileType, String s3Location, String userId,long fileSize) {
-        String message = String.format("{\"fileName\":\"%s\", \"fileType\":\"%s\", \"s3Location\":\"%s\", \"userId\":\"%s\",\"FileSize\":\"%s\"}", fileName, fileType, s3Location,userId,fileSize);
+    public void publishMetadataRequest(String fileName, String fileType, String s3Location, String userId,long fileSize,String email) {
+        String message = String.format("{\"fileName\":\"%s\", \"fileType\":\"%s\", \"s3Location\":\"%s\", \"userId\":\"%s\",\"FileSize\":\"%s\",\"email\":\"%s\"}", fileName, fileType, s3Location,userId,fileSize,email);
         log.info("Published message to Kafka topic '{}' for file: {}", metadataTopic, fileName,fileSize);
         kafkaTemplate.send(metadataTopic, message);
     }

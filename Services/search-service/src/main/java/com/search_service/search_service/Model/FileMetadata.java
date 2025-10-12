@@ -68,4 +68,7 @@ public class FileMetadata {
     @Field(type = FieldType.Date)
     private Date modifiedAt;
 
+    @Field(type = FieldType.Text)
+    private String email;
+
 }

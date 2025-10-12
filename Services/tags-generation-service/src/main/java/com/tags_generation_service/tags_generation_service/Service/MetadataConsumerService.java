@@ -25,11 +25,12 @@ public class MetadataConsumerService {
             String s3Location = json.getString("s3Location");
             String userId = json.getString("userId");
             Long fileSize = json.getLong("FileSize");
+            String email = json.getString("email");
 
             log.info("we got the file metadata on topic "+ "file-metadata-requests"+ fileSize);
 
             // Trigger the core processing logic
-            metadataProcessingService.processMetadataRequest(fileName, fileType, s3Location,userId,fileSize);
+            metadataProcessingService.processMetadataRequest(fileName, fileType, s3Location,userId,fileSize,email);
 
         } catch (Exception e) {
             log.error("Error processing Kafka message: {}", message, e);

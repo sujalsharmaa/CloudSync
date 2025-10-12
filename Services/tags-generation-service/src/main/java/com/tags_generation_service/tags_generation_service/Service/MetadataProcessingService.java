@@ -28,7 +28,7 @@ public class MetadataProcessingService {
     /**
      * This method would be triggered by a message queue listener.
      */
-    public void processMetadataRequest(String fileName, String fileType, String s3Location, String userId, Long fileSize) {
+    public void processMetadataRequest(String fileName, String fileType, String s3Location, String userId, Long fileSize,String email) {
         try {
             log.info("Processing metadata for file: {} from S3 location: {}", fileName, s3Location);
 
@@ -89,6 +89,7 @@ public class MetadataProcessingService {
                         .isMovedToRecycleBin(false)
                         .isStarred(false) // Initialize isStarred to false
                         .fileSize(fileSize)
+                        .email(email)
                         .build();
 
                 postgresService.saveOrUpdateMetadata(postgresMetadata);

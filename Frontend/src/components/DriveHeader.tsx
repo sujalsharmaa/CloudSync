@@ -1,4 +1,4 @@
-import { Search, Grid3X3, List, Settings, HelpCircle, Filter, Moon, Sun, Monitor } from 'lucide-react';
+import { Search,X ,Grid3X3, List, Settings, HelpCircle, Filter, Moon, Sun, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -45,13 +45,26 @@ export function DriveHeader() {
         <div className="relative flex-1 max-w-4xl mx-auto">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
+              {/* Search Icon */}
               <Search className="absolute left-8 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+
+              {/* Search Input */}
               <Input
                 placeholder="Search in Drive"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 h-12 bg-muted/50 border-none focus:bg-background focus:ring-2 focus:ring-primary/20 transition-smooth text-base rounded-full w-[650px] ml-4"
+                className="pl-12 pr-12 h-12 bg-muted/50 border-none focus:bg-background focus:ring-2 focus:ring-primary/20 transition-smooth text-base rounded-full w-[650px] ml-4"
               />
+
+              {/* Clear (X) Button */}
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
             </div>
             
             <DropdownMenu>

@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import axios from 'axios';
-import { StringifyOptions } from 'querystring';
+import * as Stomp from '@stomp/stompjs';
+import * as SockJS from 'sockjs-client';
+
+let stompClient: Stomp.Client | null = null;
+const BACKEND_URL = 'http://localhost:8086/ws';
 
 export interface DriveFile {
   id: string;
@@ -15,6 +19,7 @@ export interface DriveFile {
   owner?: string;
   parentId?: string;
   thumbnailUrl?: string;
+  //status: 'UPLOADED' | 'PROCESSING' | 'TAGS_GENERATED' | 'FAILED'; 
 }
 
 export interface User {
@@ -74,6 +79,7 @@ export interface DriveActions {
   addFile: (file: DriveFile) => void;
   removeFile: (fileId: string) => void;
   updateFile: (fileId: string, updates: Partial<DriveFile>) => void;
+  //connectWebSocket: (email: string) => void;
   toggleStar: (fileId: string) => void;
   fetchFiles: (query: string) => Promise<void>; // Consolidated into a single fetch action
   fetchRecycledFiles: (query: string) => Promise<void>; // Consolidated into a single fetch action
@@ -86,7 +92,6 @@ export interface DriveActions {
   fetchRecentFiles:()=>Promise<void>;
   fetchUserStoragePlanAndConsumption:()=>Promise<void>
   handlePayment:(Plan:string,price: number)=>Promise<PaymentSessionResponse>
-
 }
 
 export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
@@ -118,6 +123,68 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
         fetchRecentFiles();
       }
     },
+
+  // --- NEW ACTION IMPLEMENTATION ---
+  // connectWebSocket: (email: string) => {
+  //   if (stompClient && stompClient.connected) {
+  //     console.log('WebSocket already connected.');
+  //     return;
+  //   }
+
+  //   // 1. Create a SockJS wrapper for compatibility
+  //   const socket = new SockJS(BACKEND_URL);
+
+  //   // 2. Initialize STOMP client
+  //   stompClient = new Stomp.Client({
+  //     webSocketFactory: () => socket,
+  //     debug: (str) => {
+  //       // console.log('STOMP Debug:', str);
+  //     },
+  //     reconnectDelay: 5000,
+  //     heartbeatIncoming: 4000,
+  //     heartbeatOutgoing: 4000,
+  //   });
+
+  //   stompClient.onConnect = (frame) => {
+  //     console.log('Connected to WebSocket:', frame);
+
+  //     const { files, updateFile } = get();
+      
+  //     // 3. Subscribe to the user-specific topic
+  //     // This is the destination where the RedisListenerService will forward messages
+  //     // Topic: /user/{email}/topic/notifications
+  //     stompClient!.subscribe(`/user/${email}/topic/notifications`, (message) => {
+  //       const notification = JSON.parse(message.body);
+        
+  //       // Expected payload from RedisTopicListener: 
+  //       // { fileId: string, status: 'PROCESSING' | 'TAGS_GENERATED' | 'FAILED', ... }
+        
+  //       console.log('Received notification:', notification);
+        
+  //       // 4. Update the Zustand store with the new file status
+  //       if (notification.id) {
+  //           updateFile(notification.id, { 
+  //               processedAt: notification.processedAt,
+  //               status: notification.status 
+  //           });
+  //       }
+  //     });
+      
+  //     // OPTIONAL: Send a message to subscribe to existing files (if needed)
+  //     // This is where you would normally subscribe for a specific file, but 
+  //     // since the backend is publishing to a unique channel per file,
+  //     // the initial subscription to `/user/{email}/topic/notifications` is enough
+  //     // to receive *all* updates for this user.
+  //   };
+
+  //   stompClient.onStompError = (frame) => {
+  //     console.error('Broker reported error:', frame.headers['message']);
+  //     console.error('Additional details:', frame.body);
+  //   };
+
+  //   // 5. Activate connection
+  //   stompClient.activate();
+  // },    
 
  fetchRecentFiles: async () => {
     set({ isLoading: true });
@@ -427,50 +494,51 @@ DownloadFiles: async (filesToDownload: DriveFile[]) => {
 
 
 
-fetchFiles: async (query = '') => {
-    set({ isLoading: true });
-    try {
-      const { token } = useAuthStore.getState();
-      let url = "http://localhost:8085/api/metadata/user/search";
-      let params = {};
+  fetchFiles: async (query = '') => {
+      set({ isLoading: true });
+      try {
+        const { token } = useAuthStore.getState();
 
-      // If a query is provided, use the search endpoint
-      if (query.trim() !== '') {
-        url = "http://localhost:8085/api/metadata/search";
-        params = { query: query };
+        let url = "http://localhost:8085/api/metadata/user/search";
+        let params = {};
+
+        // If a query is provided, use the search endpoint
+        if (query.trim() !== '') {
+          url = "http://localhost:8085/api/metadata/search";
+          params = { query: query };
+        }
+
+        const res = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: params,
+          withCredentials: true,
+        });
+
+        console.log(res.data)
+
+        const filesFromBackend = res.data;
+        const mappedFiles: DriveFile[] = filesFromBackend.map((file: any) => ({
+          id: file.id,
+          fileName: file.fileName,
+          fileType: file.fileType,
+          processedAt: file.processedAt,
+          name: file.fileName,
+          modifiedTime: file.processedAt,
+          starred: file.isStarred,
+          shared: false,
+          owner: 'You',
+          size: file.fileSize,
+        }));
+
+        set({ files: mappedFiles });
+      } catch (error) {
+        console.error("Failed to fetch files: ", error);
+        // It's also a good practice to set files to an empty array on error
+        set({ files: [] });
+      } finally {
+        set({ isLoading: false });
       }
-
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: params,
-        withCredentials: true,
-      });
-
-      console.log(res.data)
-
-      const filesFromBackend = res.data;
-      const mappedFiles: DriveFile[] = filesFromBackend.map((file: any) => ({
-        id: file.id,
-        fileName: file.fileName,
-        fileType: file.fileType,
-        processedAt: file.processedAt,
-        name: file.fileName,
-        modifiedTime: file.processedAt,
-        starred: file.isStarred,
-        shared: false,
-        owner: 'You',
-        size: file.fileSize,
-      }));
-
-      set({ files: mappedFiles });
-    } catch (error) {
-      console.error("Failed to fetch files: ", error);
-      // It's also a good practice to set files to an empty array on error
-      set({ files: [] });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
+    },
 fetchRecycledFiles: async (query = '') => {
     set({ isLoading: true });
     try {

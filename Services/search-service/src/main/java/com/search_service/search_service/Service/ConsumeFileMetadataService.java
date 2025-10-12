@@ -1,14 +1,16 @@
 package com.search_service.search_service.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.search_service.search_service.Dto.SavedFileDto;
 import com.search_service.search_service.Model.FileMetadata;
 import com.search_service.search_service.Repository.FileMetadataRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-
+//import org.springframework.data.redis.core.RedisTemplate;
 import java.util.Date;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 
 @Slf4j
@@ -17,6 +19,7 @@ import java.util.Optional;
 public class ConsumeFileMetadataService {
 
     private final ObjectMapper objectMapper;
+//    private final RedisTemplate<String, String> redisTemplate;
     private final FileMetadataRepository fileMetadataRepository;
 
     /**
@@ -38,6 +41,12 @@ public class ConsumeFileMetadataService {
             fileMetadataRepository.save(fileMetadata);
             log.info("Successfully saved metadata for file: {}", fileMetadata.getFileName(),fileMetadata.getFileSize());
             Optional<FileMetadata> fileMetadata1 = fileMetadataRepository.findById(fileMetadata.getId());
+           // String redisTopic = fileMetadata1.get().getFileName()+fileMetadata1.get().getEmail(); // Use filename as the Redis topic (channel)
+            SavedFileDto savedFileDto = new SavedFileDto(fileMetadata1.get().getUserId(),
+                    fileMetadata1.get().getFileName());
+            //String jsonMessage = objectMapper.writeValueAsString(savedFileDto);
+            //redisTemplate.convertAndSend(redisTopic, jsonMessage);
+           // log.info("Published message to Redis channel '{}' for file: {}", redisTopic, fileMetadata1.get().getFileName());
             log.info("saved file metadata "+ fileMetadata1.get().getFileSize());
 
         } catch (Exception e) {

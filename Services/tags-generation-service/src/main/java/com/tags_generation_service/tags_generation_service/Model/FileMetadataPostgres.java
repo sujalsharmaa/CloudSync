@@ -78,4 +78,7 @@ public class FileMetadataPostgres {
     @Temporal(TemporalType.TIMESTAMP)
     private Date modifiedAt;
 
+    @Column(name = "email", columnDefinition = "TEXT")
+    private String email;
+
 }

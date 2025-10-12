@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.model.*;
 public class S3Service {
 
     private final S3Client s3Client;
-    private final String bucketName = "your-rag-pipeline-bucket1"; // Replace with your S3 bucket name
+    private final String bucketName = "your-rag-pipeline-bucket"; // Replace with your S3 bucket name
 
     public S3Service() {
         this.s3Client = S3Client.builder()
