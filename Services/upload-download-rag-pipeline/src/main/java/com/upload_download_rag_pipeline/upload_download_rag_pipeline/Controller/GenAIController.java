@@ -26,13 +26,8 @@ public class  GenAIController {
 
     @PostMapping("/process")
     public ResponseEntity<ProcessedDocument> processFile(@RequestParam("file") MultipartFile file, @AuthenticationPrincipal Jwt jwt) {
-//        String userId = jwt == null ? null : jwt.getSubject(); // 'sub' claim
         String userId = jwt.getClaims().get("userId").toString();
         System.out.println("userId"+userId);
-        if (jwt == null) {
-            log.warn("Unauthorized upload attempt (no jwt)");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         try {
             log.info("Receiving file for processing: {}", file.getOriginalFilename());
@@ -46,7 +41,7 @@ public class  GenAIController {
             );
 
             if ("unsafe".equalsIgnoreCase(result.getSecurityStatus())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+                return ResponseEntity.status(HttpStatus.ACCEPTED).body(result);
             }
             return ResponseEntity.ok(result);
         } catch (Exception e) {

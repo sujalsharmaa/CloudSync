@@ -13,10 +13,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -30,6 +28,7 @@ public class UploadService {
     private final S3Service s3Service;
     private final QueueService queueService;
     private final RestClient restClient;
+    private final RedisBanService redisBanService; // <-- NEW SERVICE INJECTION
     private final Tika tika = new Tika();
     private static final long GIGABYTE = 1024 * 1024 * 1024;
 
@@ -37,29 +36,46 @@ public class UploadService {
      * Handles the initial file upload, security check, quota check, and S3 storage.
      */
     public ProcessedDocument processFile(InputStream fileStream, String fileName, String userId,Jwt token) {
+        // --- PRE-CHECK: CHECK BAN STATUS ---
+        if (redisBanService.isUserBanned(userId)) {
+            log.warn("File {} rejected: User {} is currently banned.", fileName, userId);
+            return ProcessedDocument.builder()
+                    .fileName(fileName)
+                    .securityStatus("banned")
+                    .rejectionReason("User account is temporarily or permanently banned due to policy violations.")
+                    .build();
+        }
+        // --- END PRE-CHECK ---
+
         Path tempFilePath = null;
         try {
-            // 1. Write the incoming stream to a temporary file instead of an in-memory byte array
+            // 1. Write the incoming stream to a temporary file...
             tempFilePath = Files.createTempFile("upload-", fileName);
             long newFileSize = Files.copy(fileStream, tempFilePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             log.info("File saved to temporary path: {} with size: {} bytes", tempFilePath, newFileSize);
 
-            // 2. Open multiple streams from the temporary file for subsequent steps
+            // 2. Open multiple streams...
             try (InputStream tikaStream = Files.newInputStream(tempFilePath);
                  InputStream securityStream = Files.newInputStream(tempFilePath)) {
 
-                // 3. Detect file type (using stream from temp file)
+                // 3. Detect file type...
                 String fileType = detectFileType(tikaStream, fileName);
                 log.info("Detected file type: {} for file: {}", fileType, fileName);
 
-                // 4. SYNCHRONOUS SECURITY CHECK (using stream from temp file)
+                // 4. SYNCHRONOUS SECURITY CHECK
                 Map<String, Object> securityCheckResult = securityService.checkFileSecurity(securityStream, fileName, fileType);
                 String securityStatus = (String) securityCheckResult.get("security_status");
                 String rejectionReason = (String) securityCheckResult.get("rejection_reason");
 
-                // 5. If unsafe, return immediately with a rejection status
+                // 5. If unsafe, return immediately with a rejection status and log violation
                 if ("unsafe".equalsIgnoreCase(securityStatus)) {
                     log.warn("File {} rejected due to security policy. Reason: {}", fileName, rejectionReason);
+
+                    // --- FIX: INCREMENT VIOLATION AND CHECK FOR BAN ---
+                    long violationCount = redisBanService.incrementViolationAndCheckBan(userId,token.getSubject());
+                    log.warn("User {} policy violation count increased to {}.", userId, violationCount);
+                    // -----------------------------------------------------
+
                     return ProcessedDocument.builder()
                             .fileName(fileName)
                             .fileType(fileType)
@@ -68,7 +84,7 @@ public class UploadService {
                             .build();
                 }
 
-                // --- 6. STORAGE QUOTA CHECK ---
+                // --- 6. STORAGE QUOTA CHECK (Remains the same) ---
                 long currentUsage = s3Service.getUserFolderSize(userId);
                 long maxQuota = GIGABYTE; // Default to 1 GB
 
@@ -104,7 +120,7 @@ public class UploadService {
                 // --- END QUOTA CHECK ---
 
 
-                // 7. If safe AND within quota, upload to S3 (use stream from temp file)
+                // 7. If safe AND within quota, upload to S3...
                 try (InputStream s3Stream = Files.newInputStream(tempFilePath)) {
                     String s3Key = userId + "/" + fileName; // Use user-specific folder
 
@@ -112,8 +128,7 @@ public class UploadService {
                     log.info("File {} successfully uploaded to S3 at: {}", fileName, s3UploadResult.fileUrl());
 
                     // 8. ASYNCHRONOUSLY trigger the metadata processing service
-                    // Note: If s3Service.uploadFile already computes file size, use it.
-                    // Since we used Files.copy, we already have the size in 'newFileSize'.
+                    // Note: Using token.getSubject() for user email/sub as a stable identifier.
                     queueService.publishMetadataRequest(fileName, fileType, s3UploadResult.fileUrl(), userId, newFileSize, token.getSubject());
 
 
@@ -146,6 +161,7 @@ public class UploadService {
     }
 
     private String detectFileType(InputStream stream, String fileName) throws Exception {
+        // ... (detectFileType method remains the same) ...
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         String mimeType = tika.detect(stream, metadata);
@@ -166,7 +182,4 @@ public class UploadService {
         }
         return "default";
     }
-
-    // Removed the problematic readInputStreamToBytes method.
-    // The functionality is replaced by Files.copy(fileStream, tempFilePath).
 }

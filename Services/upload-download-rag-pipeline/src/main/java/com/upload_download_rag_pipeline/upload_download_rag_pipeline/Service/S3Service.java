@@ -21,7 +21,7 @@ import java.io.IOException;
 public class S3Service {
 
     private final S3Client s3Client;
-    private final String bucketName = "your-rag-pipeline-bucket"; // Replace with your S3 bucket name
+    private final String bucketName = "your-rag-pipeline-bucket1"; // Replace with your S3 bucket name
 
     // Default storage quota: 1GB (1024 * 1024 * 1024 bytes)
     private static final long MAX_STORAGE_BYTES = 1024L * 1024 * 1024;
