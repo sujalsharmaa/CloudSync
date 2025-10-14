@@ -1,4 +1,4 @@
-package Dto;
+package com.notification_service.notification_service.Dto;
 
 // BanNotification.java
 import lombok.Builder;

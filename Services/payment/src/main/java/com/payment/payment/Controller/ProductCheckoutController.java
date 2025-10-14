@@ -23,7 +23,7 @@ public class ProductCheckoutController {
     @PostMapping("/checkout")
     public ResponseEntity<StripeResponse> checkoutProducts(@RequestBody ServiceRequest serviceRequest, @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaims().get("userId").toString();
-        StripeResponse stripeResponse = stripeService.checkoutProducts(serviceRequest,userId);
+        StripeResponse stripeResponse = stripeService.checkoutProducts(serviceRequest,jwt);
         System.out.println(serviceRequest);
         return ResponseEntity
                 .status(HttpStatus.OK)

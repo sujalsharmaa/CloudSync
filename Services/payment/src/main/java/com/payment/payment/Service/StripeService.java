@@ -1,9 +1,6 @@
 package com.payment.payment.Service;
 
-import com.payment.payment.Dto.Plan;
-import com.payment.payment.Dto.ServiceRequest;
-import com.payment.payment.Dto.StripeResponse;
-import com.payment.payment.Dto.PlanUpgradeDto; // Import for the new Kafka message DTO
+import com.payment.payment.Dto.*;
 import com.payment.payment.Model.Payment;
 import com.payment.payment.Repository.PaymentRepository;
 import com.stripe.Stripe;
@@ -14,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -45,7 +43,7 @@ public class StripeService {
         return Quantity;
     }
 
-    public StripeResponse checkoutProducts(ServiceRequest serviceRequest,String UserId) {
+    public StripeResponse checkoutProducts(ServiceRequest serviceRequest, Jwt jwt) {
         // Set your secret key. Remember to switch to your live secret key in production!
         Stripe.apiKey = secretKey;
         if (serviceRequest.getPlan() == null) {
@@ -61,7 +59,7 @@ public class StripeService {
 
 
         Payment payment = new Payment();
-        payment.setUserId(Long.valueOf(UserId));
+        payment.setUserId(Long.valueOf(jwt.getClaims().get("userId").toString()));
         payment.setAmountInCents(serviceRequest.getAmount());
         // FIX: Ensure planPurchased is set to prevent DataIntegrityViolationException
         payment.setPlanPurchased(serviceRequest.getPlan()); // <-- FIX APPLIED HERE
@@ -111,7 +109,7 @@ public class StripeService {
                         .addLineItem(lineItem)
                         // Add metadata to link Stripe session back to our Payment record
                         .putMetadata("local_payment_id", String.valueOf(payment.getId()))
-                        .putMetadata("user_id", String.valueOf(UserId))
+                        .putMetadata("user_id", jwt.getClaims().get("userId").toString())
                         .build();
 
         // --- 4. Create Stripe session and update Payment record ---
@@ -137,6 +135,12 @@ public class StripeService {
                     .build();
         }
         handleSuccessfulPayment(session.getId());
+
+        StorageUpgradeNotification storageUpgradeNotification = new StorageUpgradeNotification(
+                jwt.getSubject(),jwt.getClaims().get("name").toString(),
+                serviceRequest.getPlan().toString(), Math.toIntExact(getQuantity(Plan.valueOf(serviceRequest.getPlan().toString()))),java.time.Year.now().toString()
+        );
+        queueService.publishPlanUpgradeEmailRequest(storageUpgradeNotification);
 
         return StripeResponse
                 .builder()
@@ -183,7 +187,6 @@ public class StripeService {
                 payment.getPlanPurchased()
         );
         queueService.publishPlanUpgradeInfo(upgradeDto);
-
 
         logger.info("Payment for session {} marked SUCCESS and plan upgrade event published for User ID {}", stripeSessionId, payment.getUserId());
     }

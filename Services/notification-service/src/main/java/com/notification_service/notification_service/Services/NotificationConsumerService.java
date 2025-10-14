@@ -1,6 +1,6 @@
-package Services;
+package com.notification_service.notification_service.Services;
 
-import Dto.BanNotification;
+import com.notification_service.notification_service.Dto.BanNotification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

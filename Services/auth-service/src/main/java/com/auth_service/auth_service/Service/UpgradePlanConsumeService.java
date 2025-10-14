@@ -35,6 +35,7 @@ public class UpgradePlanConsumeService {
                 User user = userOptional.get();
                 user.setPlan(planUpgradeDto.getPlan());
 
+
                 // Fix 4: Save the updated user object to persist the plan change
                 userRepository.save(user);
 

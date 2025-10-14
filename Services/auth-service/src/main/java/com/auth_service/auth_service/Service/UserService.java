@@ -1,17 +1,22 @@
 package com.auth_service.auth_service.Service;
 
+import com.auth_service.auth_service.DTO.WelcomeEmailNotification;
 import com.auth_service.auth_service.Entity.type.User;
 import com.auth_service.auth_service.Repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ReflectiveScan;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+    private final QueueService queueService;
 
     public User processOAuth2User(OAuth2User oAuth2User) {
         String email = oAuth2User.getAttribute("email");
@@ -35,7 +40,15 @@ public class UserService {
             newUser.setName(name);
             newUser.setPicture(picture);
             newUser.setGoogleId(googleId);
+
+
+            WelcomeEmailNotification welcomeEmailNotification = new WelcomeEmailNotification(
+                    email,name
+            );
+
+            queueService.publishWelcomeEmailRequest(welcomeEmailNotification);
             return userRepository.save(newUser);
+
         }
     }
 
