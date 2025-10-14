@@ -3,6 +3,7 @@ package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Dto.BanNotification;
+import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.FileMetadataPostgres;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -39,7 +40,7 @@ public class QueueService {
     public void publishBanNotification(BanNotification banNotification){
         try {
             String jsonMessage = objectMapper.writeValueAsString(banNotification);
-            log.warn("Published ban notification to Kafka for user: {}", banNotification.getEmail());
+            log.warn("Published ban notification to Kafka for user banned: {}", banNotification.getEmail());
             kafkaTemplate.send(notificationTopic, jsonMessage);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize BanNotification object: {}", banNotification.getEmail(), e);

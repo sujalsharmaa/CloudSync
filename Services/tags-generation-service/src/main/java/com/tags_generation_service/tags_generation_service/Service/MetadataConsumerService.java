@@ -24,7 +24,7 @@ public class MetadataConsumerService {
             String fileType = json.getString("fileType");
             String s3Location = json.getString("s3Location");
             String userId = json.getString("userId");
-            Long fileSize = json.getLong("FileSize");
+            Long fileSize = json.getLong("fileSize");
             String email = json.getString("email");
 
             log.info("we got the file metadata on topic "+ "file-metadata-requests"+ fileSize);

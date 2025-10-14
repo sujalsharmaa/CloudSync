@@ -1,6 +1,7 @@
 package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Service;
 
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Dto.S3UploadResult;
+import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.FileMetadataPostgres;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.Plan;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.ProcessedDocument;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class UploadService {
     private final RedisBanService redisBanService; // <-- NEW SERVICE INJECTION
     private final Tika tika = new Tika();
     private static final long GIGABYTE = 1024 * 1024 * 1024;
+    private final RedisFileService redisFileService;
 
     /**
      * Handles the initial file upload, security check, quota check, and S3 storage.
@@ -127,10 +129,13 @@ public class UploadService {
                     S3UploadResult s3UploadResult = s3Service.uploadFile(s3Key, s3Stream);
                     log.info("File {} successfully uploaded to S3 at: {}", fileName, s3UploadResult.fileUrl());
 
+                    // --- NEW STEP: SAVE PENDING FILE MARKER TO REDIS ---
+                    //redisFileService.savePendingFileMarker(userId, s3Key);
+
                     // 8. ASYNCHRONOUSLY trigger the metadata processing service
                     // Note: Using token.getSubject() for user email/sub as a stable identifier.
-                    queueService.publishMetadataRequest(fileName, fileType, s3UploadResult.fileUrl(), userId, newFileSize, token.getSubject());
 
+                    queueService.publishMetadataRequest(fileName, fileType, s3UploadResult.fileUrl(), userId, newFileSize, token.getSubject());
 
                     // 9. Return a success response to the user
                     return ProcessedDocument.builder()

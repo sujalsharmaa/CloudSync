@@ -45,10 +45,10 @@ public class RedisBanService {
         String durationString = null;
         String reason = null;
 
-        if (newCount == 5) {
+        if (newCount == 3) {
             durationString = "24 hours";
             banDuration = Duration.ofHours(24);
-            reason = "File policy violation count reached 5.";
+            reason = "File policy violation count reached 3.";
         } else if (newCount == 10) {
             durationString = "1 month";
             banDuration = Duration.ofDays(30);

@@ -25,7 +25,7 @@ const Index = () => {
                 <h2 className="text-lg font-medium text-foreground">
                   {searchQuery ? `Search results for "${searchQuery}"` : 
                    fileTypeFilter !== 'all' ? `${fileTypeFilter.charAt(0).toUpperCase() + fileTypeFilter.slice(1)}` :
-                   'My Drive'}
+                   ''}
                 </h2>
               </div>
               
