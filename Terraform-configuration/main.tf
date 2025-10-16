@@ -115,6 +115,7 @@ resource "aws_key_pair" "deployer_key" {
   key_name   = "us-east-1-dev-lms-key-new" # Name of the key pair in AWS
   public_key = file(".ssh/id_rsa_terraform_new.pub") # Path to your local public SSH key
 }
+
 resource "aws_s3_bucket" "my_bucket" {
   bucket = "your-rag-pipeline-bucket"  # Must be globally unique
   acl = "private"

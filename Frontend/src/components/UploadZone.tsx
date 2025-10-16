@@ -30,11 +30,6 @@ interface ProcessedDocument {
   thumbnailUrl?: string;
 }
 
-// Define New Theme Colors for readability (though we'll use utility classes directly)
-// const ACCENT_COLOR_CLASS = 'text-indigo-500';
-// const DRAG_BG_CLASS = 'bg-indigo-50/50';
-// const DRAG_BORDER_CLASS = 'border-indigo-500';
-
 export function UploadZone() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
@@ -43,7 +38,6 @@ export function UploadZone() {
   const token = localStorage.getItem("auth_token") || null;
   const [isBanned, setIsBanned] = useState(false);
 
-  // ... (useCallback functions remain the same)
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
@@ -82,7 +76,8 @@ export function UploadZone() {
 
     setUploadFiles(prev => [...prev, ...newUploadFiles]);
 
-    files.forEach(async (file, index) => {
+    // Create an array of promises for each file upload
+    const uploadPromises = files.map(async (file, index) => {
       const uploadFile = newUploadFiles[index];
       const formData = new FormData();
       formData.append('file', file);
@@ -109,12 +104,11 @@ export function UploadZone() {
             },
           }
         );
-        console.log(response.data)
 
         const serverData = response.data;
 
         if (serverData.securityStatus === 'banned') {
-          setIsBanned(true)
+          setIsBanned(true);
         }
 
         if (serverData.securityStatus !== "safe") {
@@ -132,18 +126,18 @@ export function UploadZone() {
             variant: "destructive"
           });
           setTimeout(() => removeUploadFile(uploadFile.id), 4000);
-          return;
+          return; // Stop processing this file
         }
 
         setUploadFiles(prev =>
           prev.map(f =>
             f.id === uploadFile.id
               ? {
-                ...f,
-                progress: 100,
-                status: 'completed' as const,
-                name: serverData.fileName
-              }
+                  ...f,
+                  progress: 100,
+                  status: 'completed' as const,
+                  name: serverData.fileName
+                }
               : f
           )
         );
@@ -152,7 +146,7 @@ export function UploadZone() {
           id: serverData.id,
           fileName: serverData.fileName,
           name: serverData.fileName,
-          type: serverData.fileType,
+          fileType: serverData.fileType,
           size: serverData.fileSize,
           processedAt: serverData.processedAt || new Date().toISOString(),
           modifiedTime: serverData.processedAt || new Date().toISOString(),
@@ -160,13 +154,13 @@ export function UploadZone() {
           shared: false,
           owner: 'me',
         });
-        console.log(response.data)
 
         toast({
           title: "Upload completed",
           description: `${serverData.fileName} has been uploaded successfully.`,
         });
 
+        // The temporary removal can be short as the page will reload soon
         setTimeout(() => removeUploadFile(uploadFile.id), 300);
 
       } catch (error) {
@@ -179,7 +173,6 @@ export function UploadZone() {
           )
         );
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-        console.log(errorMessage)
         toast({
           title: "Upload failed",
           description: `Failed to upload ${uploadFile.name}. ${errorMessage}`,
@@ -188,12 +181,29 @@ export function UploadZone() {
         setTimeout(() => removeUploadFile(uploadFile.id), 4000);
       }
     });
-  }, [addFile, toast, token, removeUploadFile]);
 
+    // **Wait for all upload promises to settle**
+    try {
+        await Promise.all(uploadPromises);
+        // This line will only run after all files have been processed
+        toast({
+            title: "Queue complete",
+            description: "All files processed. Refreshing the page.",
+        });
+        // Refresh the page after a short delay to allow the user to see the toast
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000); 
+    } catch (error) {
+        // This catch block is for errors in Promise.all itself, which is unlikely
+        // since individual errors are caught within the loop.
+        console.error("An unexpected error occurred during the upload queue:", error);
+    }
+  }, [addFile, toast, token, removeUploadFile]);
 
   return (
     <div className="space-y-4">
-      {/* Ban Dialog remains the same */}
+      {/* Ban Dialog */}
       <Dialog open={isBanned} onOpenChange={setIsBanned}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -219,21 +229,15 @@ export function UploadZone() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* --------------------------------------------------------------------------------- */}
-
-      {/* THEME CHANGES APPLIED HERE:
-        1. border-primary/50 -> border-indigo-500/80
-        2. bg-primary/5 -> bg-indigo-50
-        3. hover:border-primary/30 -> hover:border-indigo-500/50
-        4. Added shadow-lg on drag, and a subtle shadow-md on hover.
-      */}
+      
+      {/* Upload Dropzone */}
       <div className="rounded-xl overflow-hidden shadow-md">
         <Card
           className={`
             border-2 border-dashed p-8 text-center transition-all duration-300 ease-in-out cursor-pointer
             ${isDragOver
-              ? 'border-indigo-500/80 bg-indigo-50 shadow-xl' // Vibrant drag state
-              : 'border-border bg-background hover:border-indigo-500/50 hover:shadow-lg' // Subtle hover state
+              ? 'border-indigo-500/80 bg-indigo-50 shadow-xl'
+              : 'border-border bg-background hover:border-indigo-500/50 hover:shadow-lg'
             }
           `}
           onDragOver={handleDragOver}
@@ -242,19 +246,16 @@ export function UploadZone() {
           onClick={() => document.getElementById('file-upload')?.click()}
         >
           <div className="space-y-4">
-            {/* Icon Styling Change: 
-              1. Conditional styling for a "glow" on drag.
-            */}
             <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
               isDragOver 
-              ? 'bg-indigo-500 text-white shadow-indigo-500/50 shadow-2xl' // Stronger icon style on drag
-              : 'bg-muted text-indigo-500/80' // Default state using the new accent color
+              ? 'bg-indigo-500 text-white shadow-indigo-500/50 shadow-2xl'
+              : 'bg-muted text-indigo-500/80'
             }`}>
               <Upload className="w-8 h-8" />
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-foreground"> {/* Increased text size and weight */}
+              <h3 className="text-xl font-bold text-foreground">
                 {isDragOver ? 'DROP YOUR FILES!' : 'Drag and Drop Your Documents'}
               </h3>
               <p className="text-muted-foreground text-sm">
@@ -273,6 +274,7 @@ export function UploadZone() {
         </Card>
       </div>
 
+      {/* Upload Progress List */}
       {uploadFiles.length > 0 && (
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-foreground">Uploading files</h4>
@@ -286,7 +288,7 @@ export function UploadZone() {
                 <FileText className={`w-8 h-8 flex-shrink-0 ${
                   file.status === 'error' ? 'text-destructive' :
                   file.status === 'completed' ? 'text-green-500' :
-                  'text-indigo-500' // Changed to vibrant indigo
+                  'text-indigo-500'
                 }`} />
 
                 <div className="flex-1 min-w-0 space-y-2">
@@ -309,10 +311,9 @@ export function UploadZone() {
                       <p className='text-xs text-green-600 font-medium'>Upload Complete</p>
                     ) : (
                       <>
-                        {/* Progress Bar Change: Use a custom progress bar track color */}
                         <Progress
                           value={file.progress}
-                          className="h-1.5 [&>div]:bg-indigo-500" // Tailwind utility to target the inner div for color
+                          className="h-1.5 [&>div]:bg-indigo-500"
                         />
                         <div className="flex justify-between text-xs text-muted-foreground">
                           <span>{Math.round(file.progress)}%</span>

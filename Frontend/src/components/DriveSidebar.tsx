@@ -60,7 +60,7 @@ export function DriveSidebar() {
 
   const navigationItems = [
     { icon: HardDrive, label: 'My Drive', view: 'my-drive' },
-    { icon: Users, label: 'Shared with me', view: 'shared-with-me' },
+    // { icon: Users, label: 'Shared with me', view: 'shared-with-me' },
     { icon: Clock, label: 'Recent', view: 'recent' },
     { icon: Star, label: 'Starred', view: 'starred' },
     { icon: Trash2, label: 'Trash', view: 'trash' },
@@ -68,10 +68,6 @@ export function DriveSidebar() {
 
   return (
     <aside className="w-64 h-screen sticky top-0 border-r bg-background p-4 flex flex-col overflow-hidden min-h-0 relative z-10">
-      <Button className="mb-6 w-full justify-start gap-3 h-12 bg-gray-800 hover:bg-gray-600 shadow-hover transition-smooth text-white">
-        <Plus className="w-5 h-5" />
-        New
-      </Button>
 
       {/* scrollable area that can shrink */}
       <nav className="flex-1 overflow-y-auto space-y-1">

@@ -1,8 +1,10 @@
 package com.auth_service.auth_service.Controllers;
 
 import com.auth_service.auth_service.DTO.StoragePlanResponse;
+import com.auth_service.auth_service.DTO.WelcomeEmailNotification;
 import com.auth_service.auth_service.Entity.type.Plan;
 import com.auth_service.auth_service.Entity.type.User;
+import com.auth_service.auth_service.Service.QueueService;
 import com.auth_service.auth_service.Service.S3Service;
 import com.auth_service.auth_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class AuthController {
 
     private final UserService userService;
     private final S3Service s3Service;
+    private final QueueService queueService;
 
     @GetMapping("/user")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal User user) {

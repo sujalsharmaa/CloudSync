@@ -138,7 +138,7 @@ public class StripeService {
 
         StorageUpgradeNotification storageUpgradeNotification = new StorageUpgradeNotification(
                 jwt.getSubject(),jwt.getClaims().get("name").toString(),
-                serviceRequest.getPlan().toString(), Math.toIntExact(getQuantity(Plan.valueOf(serviceRequest.getPlan().toString()))),java.time.Year.now().toString()
+                serviceRequest.getPlan().toString(), Math.toIntExact(getQuantity(Plan.valueOf(serviceRequest.getPlan().toString())))
         );
         queueService.publishPlanUpgradeEmailRequest(storageUpgradeNotification);
 

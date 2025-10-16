@@ -40,12 +40,9 @@ public class UserService {
             newUser.setName(name);
             newUser.setPicture(picture);
             newUser.setGoogleId(googleId);
-
-
             WelcomeEmailNotification welcomeEmailNotification = new WelcomeEmailNotification(
                     email,name
             );
-
             queueService.publishWelcomeEmailRequest(welcomeEmailNotification);
             return userRepository.save(newUser);
 

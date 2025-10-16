@@ -23,7 +23,7 @@ public class StorageUpgradeConsumer {
 
     @KafkaListener(
             topics = "storage-upgrade-topic",
-            groupId = "rag-pipeline-group-notification"
+            groupId = "notification-service-group"
     )
     public void consumeStorageUpgrade(String message) {
 
@@ -36,7 +36,7 @@ public class StorageUpgradeConsumer {
             String body = buildUpgradeEmailBody(notification);
 
             // Send email
-            mailService.sendEmail(notification.getEmail(), subject, body);
+            mailService.sendHtmlEmail(notification.getEmail(), subject, body);
             log.info("Successfully sent storage upgrade email to {}", notification.getEmail());
 
         } catch (Exception e) {
@@ -55,7 +55,7 @@ public class StorageUpgradeConsumer {
 
         // Only use DTO fields - removed oldStorageGB, price, and billingCycle references.
 
-        String formattedUpgradeDate = notification.getUpgradeDate() != null ? notification.getUpgradeDate() :
+        String formattedUpgradeDate =
                 new SimpleDateFormat("MMMM dd, yyyy", Locale.US).format(new Date());
 
         // --- HTML EMAIL BODY START ---
@@ -68,7 +68,7 @@ public class StorageUpgradeConsumer {
                 <title>Storage Upgrade Success</title>
                 <style>
                     /* Basic reset for better compatibility */
-                    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+                    body, table, td, a { -webkit-text-size-adjust: 100%%; -ms-text-size-adjust: 100%%; }
                     table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
                     img { -ms-interpolation-mode: bicubic; }
                     /* Font import for a clean look */
@@ -91,7 +91,7 @@ public class StorageUpgradeConsumer {
                         border-radius: 8px;
                         transition: background-color 0.3s;
                     }
-                    .summary-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    .summary-table { width: 100%%; border-collapse: collapse; margin: 20px 0; }
                     .summary-table th, .summary-table td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
                     .summary-table th { background-color: #f3f4f6; color: #374151; font-weight: 600; }
                     .highlight { font-weight: 700; color: #10b981; }
@@ -99,9 +99,9 @@ public class StorageUpgradeConsumer {
                     
                     /* Responsive adjustments */
                     @media only screen and (max-width: 600px) {
-                        .container { width: 100% !important; border-radius: 0; margin: 0; }
+                        .container { width: 100%% !important; border-radius: 0; margin: 0; }
                         .cta-button { display: block; text-align: center; }
-                        .summary-table, .summary-table th, .summary-table td { display: block; width: 100%; box-sizing: border-box; }
+                        .summary-table, .summary-table th, .summary-table td { display: block; width: 100%%; box-sizing: border-box; }
                         .summary-table th { text-align: center; }
                         .summary-table td { text-align: right; border-bottom: none; }
                         .summary-table tr { border-bottom: 1px solid #e5e7eb; display: block; }

@@ -34,6 +34,8 @@ public class DeletePermanently {
         // 2. Delete the files from S3
         if (!s3Keys.isEmpty()) {
             s3Service.deleteFiles(s3Keys);
+        }else{
+            System.out.println("empty key");
         }
 
         // 3. Delete the metadata from the PostgreSQL database

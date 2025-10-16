@@ -24,8 +24,4 @@ public class StorageUpgradeNotification {
     @JsonProperty("newStorageGB")
     private Integer newStorageGB;
 
-    @JsonProperty("upgradeDate")
-    private String upgradeDate;
-
-
 }

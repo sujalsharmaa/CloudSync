@@ -34,6 +34,7 @@ public class QueueService {
         kafkaTemplate.send(metadataTopic, message);
     }
 
+
     /**
      * Publishes a BanNotification object to Kafka by serializing it to a JSON string.
      */

@@ -13,12 +13,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.data.redis.core.StringRedisTemplate; // <-- NEW IMPORT
 
 import java.io.InputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.TimeUnit; // <-- NEW IMPORT
 
 @Slf4j
 @Service
@@ -29,10 +31,13 @@ public class UploadService {
     private final S3Service s3Service;
     private final QueueService queueService;
     private final RestClient restClient;
-    private final RedisBanService redisBanService; // <-- NEW SERVICE INJECTION
+    private final RedisBanService redisBanService;
+    private final StringRedisTemplate stringRedisTemplate; // <-- NEW INJECTION for waiting
     private final Tika tika = new Tika();
     private static final long GIGABYTE = 1024 * 1024 * 1024;
-    private final RedisFileService redisFileService;
+
+    private static final String CONFIRMATION_KEY_PREFIX = "file:sync_confirm:";
+    private static final long ASYNC_TIMEOUT_SECONDS = 20; // Max time to wait for metadata processing
 
     /**
      * Handles the initial file upload, security check, quota check, and S3 storage.
@@ -125,17 +130,44 @@ public class UploadService {
                 // 7. If safe AND within quota, upload to S3...
                 try (InputStream s3Stream = Files.newInputStream(tempFilePath)) {
                     String s3Key = userId + "/" + fileName; // Use user-specific folder
+                    String confirmationKey = CONFIRMATION_KEY_PREFIX + userId + ":" + fileName; // Define confirmation key
 
                     S3UploadResult s3UploadResult = s3Service.uploadFile(s3Key, s3Stream);
                     log.info("File {} successfully uploaded to S3 at: {}", fileName, s3UploadResult.fileUrl());
 
-                    // --- NEW STEP: SAVE PENDING FILE MARKER TO REDIS ---
+                    // --- OLD: NEW STEP: SAVE PENDING FILE MARKER TO REDIS ---
                     //redisFileService.savePendingFileMarker(userId, s3Key);
 
                     // 8. ASYNCHRONOUSLY trigger the metadata processing service
-                    // Note: Using token.getSubject() for user email/sub as a stable identifier.
-
                     queueService.publishMetadataRequest(fileName, fileType, s3UploadResult.fileUrl(), userId, newFileSize, token.getSubject());
+
+                    // --- NEW: BLOCKING WAIT FOR CONFIRMATION FROM CONSUMER ---
+                    log.info("Waiting for metadata processing confirmation on key: {}", confirmationKey);
+
+                    long startTime = System.currentTimeMillis();
+                    boolean confirmed = false;
+
+                    // Poll Redis for the confirmation key with a timeout
+                    while ((System.currentTimeMillis() - startTime) < ASYNC_TIMEOUT_SECONDS * 1000) {
+                        if (stringRedisTemplate.hasKey(confirmationKey)) {
+                            confirmed = true;
+                            break;
+                        }
+                        // Wait briefly before polling again
+                        TimeUnit.MILLISECONDS.sleep(500);
+                    }
+
+                    // Cleanup the confirmation key immediately
+                    stringRedisTemplate.delete(confirmationKey);
+                    // --- END BLOCKING WAIT ---
+
+                    if (!confirmed) {
+                        // Decide how to handle timeout (e.g., return a warning status or error)
+                        log.warn("File {} metadata processing timed out after {} seconds. Returning partial success/warning.", fileName, ASYNC_TIMEOUT_SECONDS);
+                    } else {
+                        log.info("File {} metadata processing confirmed by consumer.", fileName);
+                    }
+
 
                     // 9. Return a success response to the user
                     return ProcessedDocument.builder()
@@ -145,6 +177,7 @@ public class UploadService {
                             .fileSize(newFileSize)
                             .userId(userId)
                             .securityStatus("safe")
+                            // Note: You could add a status field like 'metadataStatus: confirmed/pending' here
                             .build();
                 } // s3Stream closed here
 

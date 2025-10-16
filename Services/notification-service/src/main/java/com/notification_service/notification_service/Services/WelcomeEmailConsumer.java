@@ -16,10 +16,11 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class WelcomeEmailConsumer {
 
+    // These fields are correctly injected via the @RequiredArgsConstructor constructor
     private final ObjectMapper objectMapper;
     private final MailService mailService;
 
-    @KafkaListener(topics = "welcome-email-topic", groupId = "rag-pipeline-group-notification")
+    @KafkaListener(topics = "welcome-email-topic", groupId = "rag-pipeline-group")
     public void consumeWelcomeEmail(String message) {
 
         try {
@@ -31,7 +32,7 @@ public class WelcomeEmailConsumer {
             String body = buildWelcomeEmailBody(notification);
 
             // Send email
-            mailService.sendEmail(notification.getEmail(), subject, body);
+            mailService.sendHtmlEmail(notification.getEmail(), subject, body);
             log.info("Successfully sent welcome email to {}", notification.getEmail());
 
         } catch (Exception e) {
@@ -57,7 +58,7 @@ public class WelcomeEmailConsumer {
                 <title>Welcome to CloudSync</title>
                 <style>
                     /* Basic reset for better compatibility */
-                    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+                    body, table, td, a { -webkit-text-size-adjust: 100%%; -ms-text-size-adjust: 100%%; }
                     table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
                     img { -ms-interpolation-mode: bicubic; }
                     /* Font import for a clean look */
@@ -88,7 +89,7 @@ public class WelcomeEmailConsumer {
 
                     /* Responsive adjustments */
                     @media only screen and (max-width: 600px) {
-                        .container { width: 100% !important; border-radius: 0; margin: 0; }
+                        .container { width: 100%% !important; border-radius: 0; margin: 0; }
                         .cta-button { display: block; text-align: center; }
                     }
                 </style>
