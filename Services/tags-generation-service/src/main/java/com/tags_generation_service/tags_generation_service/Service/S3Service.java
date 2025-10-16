@@ -18,7 +18,7 @@ public class S3Service {
 
     private final S3Client s3Client;
     // NOTE: In a production app, the bucket name should be loaded via @Value or properties.
-    private final String bucketName = "your-rag-pipeline-bucket";
+    private final String bucketName = "your-rag-pipeline-bucket1";
     private final Region region = Region.US_EAST_1; // Using a variable for consistency
 
     public S3Service() {

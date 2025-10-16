@@ -43,6 +43,7 @@ export interface DriveState {
   currentFolder: string | null;
   selectedFiles: string[];
   viewMode: 'grid' | 'list';
+  fileActionLoading: Set<string>;
   activeView: 'my-drive' | 'shared-with-me' | 'recent' | 'starred' | 'trash';
   searchQuery: string;
   fileTypeFilter: 'all' | 'folders' | 'documents' | 'images' | 'videos' | 'presentations' | 'spreadsheets';
@@ -80,7 +81,7 @@ export interface DriveActions {
   removeFile: (fileId: string) => void;
   updateFile: (fileId: string, updates: Partial<DriveFile>) => void;
   //connectWebSocket: (email: string) => void;
-  toggleStar: (fileId: string) => void;
+ toggleStar: (fileId: string) => Promise<void>; // Ensure this is async
   fetchFiles: (query: string) => Promise<void>; // Consolidated into a single fetch action
   fetchRecycledFiles: (query: string) => Promise<void>; // Consolidated into a single fetch action
   MoveFileToTrash: (filesToTrash: DriveFile[]) => Promise<void>; // Add this line
@@ -92,6 +93,7 @@ export interface DriveActions {
   fetchRecentFiles:()=>Promise<void>;
   fetchUserStoragePlanAndConsumption:()=>Promise<void>
   handlePayment:(Plan:string,price: number)=>Promise<PaymentSessionResponse>
+  
 }
 
 export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
@@ -100,6 +102,7 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
   currentFolder: null,
   selectedFiles: [],
   // uploadSuccessFlag: false,
+  fileActionLoading: new Set<string>(),
   viewMode: 'grid',
   searchQuery: '',
   fileTypeFilter: 'all',
@@ -123,68 +126,6 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
         fetchRecentFiles();
       }
     },
-
-  // --- NEW ACTION IMPLEMENTATION ---
-  // connectWebSocket: (email: string) => {
-  //   if (stompClient && stompClient.connected) {
-  //     console.log('WebSocket already connected.');
-  //     return;
-  //   }
-
-  //   // 1. Create a SockJS wrapper for compatibility
-  //   const socket = new SockJS(BACKEND_URL);
-
-  //   // 2. Initialize STOMP client
-  //   stompClient = new Stomp.Client({
-  //     webSocketFactory: () => socket,
-  //     debug: (str) => {
-  //       // console.log('STOMP Debug:', str);
-  //     },
-  //     reconnectDelay: 5000,
-  //     heartbeatIncoming: 4000,
-  //     heartbeatOutgoing: 4000,
-  //   });
-
-  //   stompClient.onConnect = (frame) => {
-  //     console.log('Connected to WebSocket:', frame);
-
-  //     const { files, updateFile } = get();
-      
-  //     // 3. Subscribe to the user-specific topic
-  //     // This is the destination where the RedisListenerService will forward messages
-  //     // Topic: /user/{email}/topic/notifications
-  //     stompClient!.subscribe(`/user/${email}/topic/notifications`, (message) => {
-  //       const notification = JSON.parse(message.body);
-        
-  //       // Expected payload from RedisTopicListener: 
-  //       // { fileId: string, status: 'PROCESSING' | 'TAGS_GENERATED' | 'FAILED', ... }
-        
-  //       console.log('Received notification:', notification);
-        
-  //       // 4. Update the Zustand store with the new file status
-  //       if (notification.id) {
-  //           updateFile(notification.id, { 
-  //               processedAt: notification.processedAt,
-  //               status: notification.status 
-  //           });
-  //       }
-  //     });
-      
-  //     // OPTIONAL: Send a message to subscribe to existing files (if needed)
-  //     // This is where you would normally subscribe for a specific file, but 
-  //     // since the backend is publishing to a unique channel per file,
-  //     // the initial subscription to `/user/{email}/topic/notifications` is enough
-  //     // to receive *all* updates for this user.
-  //   };
-
-  //   stompClient.onStompError = (frame) => {
-  //     console.error('Broker reported error:', frame.headers['message']);
-  //     console.error('Additional details:', frame.body);
-  //   };
-
-  //   // 5. Activate connection
-  //   stompClient.activate();
-  // },    
 
  fetchRecentFiles: async () => {
     set({ isLoading: true });
@@ -367,44 +308,77 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
       console.error("Failed to update star status: ", error);
     }
   },
-    toggleStar: (fileId) => {
-    const { files, toggleStarStatus } = get();
-    const file = files.find((f) => f.id === fileId);
-    if (file) {
-      toggleStarStatus(fileId, !file.starred);
+toggleStar: async (fileId: string) => {
+    const { files, updateFile } = get();
+    const originalFiles = [...files]; // Store original state for potential rollback
+    const fileToUpdate = files.find((f) => f.id === fileId);
+
+    if (!fileToUpdate) return;
+
+    // 1. Add file ID to the loading set to show a spinner immediately
+    set((state) => ({
+      fileActionLoading: new Set(state.fileActionLoading).add(fileId),
+    }))
+
+    // 2. Optimistically update the UI without waiting for the server
+    const newStarredStatus = !fileToUpdate.starred;
+    updateFile(fileId, { starred: newStarredStatus });
+
+    try {
+      // 3. Make the API call in the background
+      const { token } = useAuthStore.getState();
+      await axios.post(
+        `http://localhost:8082/api/star/${fileId}`,
+        newStarredStatus,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      // Success! The UI is already updated, so we don't need to do anything.
+    } catch (error) {
+      console.error("Failed to update star status, rolling back UI:", error);
+      // 4. If the API call fails, roll back to the original state
+      set({ files: originalFiles });
+      // Here you could also show an error notification to the user
+    } finally {
+      // 5. Remove the file ID from the loading set to hide the spinner
+      set((state) => {
+        const newLoadingSet = new Set(state.fileActionLoading);
+        newLoadingSet.delete(fileId);
+        return { fileActionLoading: newLoadingSet };
+      });
     }
   },
 
 // Inside useDriveStore
 MoveFileToTrash: async (filesToTrash: DriveFile[]) => {
-  set({ isLoading: true });
-  try {
-    const { token } = useAuthStore.getState();
-    const fileIds = filesToTrash.map(file => file.id);
+    // NOTE: This could also be converted to an optimistic update for a faster feel.
+    set({ isLoading: true });
+    try {
+      const { token } = useAuthStore.getState();
+      const fileIds = filesToTrash.map(file => file.id);
 
-    // Make a DELETE request to your backend with the file IDs
-    console.log("tried to called MoveToRecycleBin")
-    const res = await axios.delete('http://localhost:8082/api/MoveToRecycleBin', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      data: fileIds
-    });
-    console.log(res.data)
+      await axios.delete('http://localhost:8082/api/MoveToRecycleBin', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        data: fileIds
+      });
 
-    // On successful deletion, update the local state by removing the files
-    set((state) => ({
-      files: state.files.filter(file => !fileIds.includes(file.id)),
-      selectedFiles: [] // Clear selected files after moving them
-    }));
-  } catch (error) {
-    console.error("Failed to move files to trash: ", error);
-    // Handle error, e.g., show a toast notification
-  } finally {
-    set({ isLoading: false });
-  }
-}, 
+      set((state) => ({
+        files: state.files.filter(file => !fileIds.includes(file.id)),
+        selectedFiles: []
+      }));
+    } catch (error) {
+      console.error("Failed to move files to trash: ", error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 
   RestoreFiles: async (filesToRestore: DriveFile[]) => {
     set({ isLoading: true });

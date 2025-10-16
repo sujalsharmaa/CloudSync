@@ -117,7 +117,7 @@ resource "aws_key_pair" "deployer_key" {
 }
 
 resource "aws_s3_bucket" "my_bucket" {
-  bucket = "your-rag-pipeline-bucket"  # Must be globally unique
+  bucket = "your-rag-pipeline-bucket1"  # Must be globally unique
   acl = "private"
 }
 

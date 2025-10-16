@@ -33,7 +33,8 @@ public class DownloadFileService {
              ZipOutputStream zipOut = new ZipOutputStream(baos)) {
 
             for (FileMetadataPostgres file : filesToDownload) {
-                try (InputStream inputStream = s3Service.downloadFile(file.getFileName())) {
+                // FIX: Use getS3Location() which contains the full key, not just the filename.
+                try (InputStream inputStream = s3Service.downloadFile(file.getS3Location())) {
                     ZipEntry zipEntry = new ZipEntry(file.getFileName());
                     zipOut.putNextEntry(zipEntry);
 
@@ -45,6 +46,7 @@ public class DownloadFileService {
                     zipOut.closeEntry();
                 } catch (IOException e) {
                     log.error("Failed to download or zip file {}: {}", file.getFileName(), e.getMessage());
+                    // Depending on requirements, you might want to re-throw or continue
                 }
             }
             zipOut.finish();
