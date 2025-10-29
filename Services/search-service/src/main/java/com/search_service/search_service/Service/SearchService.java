@@ -11,6 +11,7 @@ import com.search_service.search_service.Repository.FileMetadataRepository;
 //import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,12 @@ public class SearchService {
     private final FileMetadataMapper fileMetadataMapper; // Inject the mapper
     private final UserTagsAndCategoriesMapper userTagsAndCategoriesMapper;
     private final ElasticsearchOperations elasticsearchOperations;
+
+    @CacheEvict(value = "userFiles", key = "#userId")
+    public void evictUserFileCache(String userId) {
+        log.info("Evicting 'userFiles' cache for user: {}", userId);
+        // The annotation handles the eviction logic. Method body can be empty.
+    }
 
     public List<UserFileMetadata> searchByQuery(String query,String userId) {
         log.info("Performing semantic search: {}", query);

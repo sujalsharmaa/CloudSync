@@ -68,7 +68,7 @@ public class SecurityService {
             log.error("Security check failed for file: {}", fileName, e);
             // Return a default unsafe status in case of an unexpected error
             Map<String, Object> errorResult = new HashMap<>();
-            errorResult.put("security_status", "unsafe");
+            errorResult.put("security_status", "error");
             errorResult.put("rejection_reason", "An internal error occurred during the security check.");
             return errorResult;
         }
@@ -123,20 +123,20 @@ public class SecurityService {
             // Sanity check: if status is not safe or unsafe, default to unsafe
             if (!"safe".equals(result.get("security_status")) && !"unsafe".equals(result.get("security_status"))) {
                 log.warn("LLM returned an unexpected status: {}", result.get("security_status"));
-                result.put("security_status", "unsafe");
+                result.put("security_status", "error");
                 result.put("rejection_reason", "LLM returned an unexpected status.");
             }
             return result;
         } catch (JsonMappingException e) {
             log.error("Failed to parse LLM response due to invalid JSON format: {}", sanitizedResponse, e);
             Map<String, Object> errorResult = new HashMap<>();
-            errorResult.put("security_status", "unsafe");
+            errorResult.put("security_status", "error");
             errorResult.put("rejection_reason", "LLM response is not valid JSON.");
             return errorResult;
         } catch (Exception e) {
             log.error("Failed to parse LLM response: {}", sanitizedResponse, e);
             Map<String, Object> errorResult = new HashMap<>();
-            errorResult.put("security_status", "unsafe");
+            errorResult.put("security_status", "error");
             errorResult.put("rejection_reason", "An error occurred while parsing LLM response.");
             return errorResult;
         }

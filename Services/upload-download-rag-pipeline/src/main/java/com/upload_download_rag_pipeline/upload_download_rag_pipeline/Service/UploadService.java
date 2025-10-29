@@ -69,19 +69,21 @@ public class UploadService {
                 String fileType = detectFileType(tikaStream, fileName);
                 log.info("Detected file type: {} for file: {}", fileType, fileName);
 
-                // 4. SYNCHRONOUS SECURITY CHECK
+
+                // 5. SYNCHRONOUS SECURITY CHECK
                 Map<String, Object> securityCheckResult = securityService.checkFileSecurity(securityStream, fileName, fileType);
                 String securityStatus = (String) securityCheckResult.get("security_status");
                 String rejectionReason = (String) securityCheckResult.get("rejection_reason");
 
-                // 5. If unsafe, return immediately with a rejection status and log violation
+                // --- FIX: Split check for "unsafe" vs "error" ---
+
+                // 5a. If it's a GENUINE "unsafe" violation, increment ban count
                 if ("unsafe".equalsIgnoreCase(securityStatus)) {
                     log.warn("File {} rejected due to security policy. Reason: {}", fileName, rejectionReason);
 
-                    // --- FIX: INCREMENT VIOLATION AND CHECK FOR BAN ---
+                    // This is a real violation, so increment the counter
                     long violationCount = redisBanService.incrementViolationAndCheckBan(userId,token.getSubject());
                     log.warn("User {} policy violation count increased to {}.", userId, violationCount);
-                    // -----------------------------------------------------
 
                     return ProcessedDocument.builder()
                             .fileName(fileName)
@@ -90,6 +92,20 @@ public class UploadService {
                             .rejectionReason(rejectionReason)
                             .build();
                 }
+
+                // 5b. If it's an INTERNAL error, reject the file but DO NOT ban
+                else if ("error".equalsIgnoreCase(securityStatus)) {
+                    log.error("File {} rejected due to internal security check error. Reason: {}", fileName, rejectionReason);
+
+                    // DO NOT increment the ban counter. This is a system fault.
+                    return ProcessedDocument.builder()
+                            .fileName(fileName)
+                            .fileType(fileType)
+                            .securityStatus("rejected_internal_error") // Clear status for the client
+                            .rejectionReason("File could not be processed due to an internal system error. Please try again later.")
+                            .build();
+                }
+                // --- END FIX ---
 
                 // --- 6. STORAGE QUOTA CHECK (Remains the same) ---
                 long currentUsage = s3Service.getUserFolderSize(userId);
@@ -146,10 +162,15 @@ public class UploadService {
 
                     long startTime = System.currentTimeMillis();
                     boolean confirmed = false;
+                    String confirmedFileId = null;
 
                     // Poll Redis for the confirmation key with a timeout
                     while ((System.currentTimeMillis() - startTime) < ASYNC_TIMEOUT_SECONDS * 1000) {
-                        if (stringRedisTemplate.hasKey(confirmationKey)) {
+                        // FIX: Read the value from the key
+                        confirmedFileId = stringRedisTemplate.opsForValue().get(confirmationKey);
+
+                        // FIX: Check if the retrieved ID is valid
+                        if (confirmedFileId != null && !confirmedFileId.isEmpty()) {
                             confirmed = true;
                             break;
                         }
@@ -171,6 +192,7 @@ public class UploadService {
 
                     // 9. Return a success response to the user
                     return ProcessedDocument.builder()
+                            .id(confirmedFileId)
                             .fileName(fileName)
                             .fileType(fileType)
                             .s3Location(s3UploadResult.fileUrl())

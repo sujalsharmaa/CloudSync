@@ -15,18 +15,15 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Optional; // Import for Optional
+import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor // Automatically injects final fields
+@RequiredArgsConstructor
 public class StripeService {
 
     private static final Logger logger = LoggerFactory.getLogger(StripeService.class);
 
-    // Inject the new PaymentRepository (from previous step)
     private final PaymentRepository paymentRepository;
-
-    // Inject the QueueService for Kafka publishing
     private final QueueService queueService;
 
     @Value("${stripe.secretKey}")
@@ -44,8 +41,8 @@ public class StripeService {
     }
 
     public StripeResponse checkoutProducts(ServiceRequest serviceRequest, Jwt jwt) {
-        // Set your secret key. Remember to switch to your live secret key in production!
         Stripe.apiKey = secretKey;
+
         if (serviceRequest.getPlan() == null) {
             logger.info("Plan is required and must be one of: BASIC, PRO, TEAM.");
             return StripeResponse.builder()
@@ -54,28 +51,21 @@ public class StripeService {
                     .build();
         }
 
-        // --- 1. Create a Payment Entity with PENDING status for initial tracking ---
-        // NOTE: Replace this hardcoded ID (1L) with the actual authenticated user's ID.
-
-
+        // Create a Payment Entity with PENDING status
         Payment payment = new Payment();
         payment.setUserId(Long.valueOf(jwt.getClaims().get("userId").toString()));
         payment.setAmountInCents(serviceRequest.getAmount());
-        // FIX: Ensure planPurchased is set to prevent DataIntegrityViolationException
-        payment.setPlanPurchased(serviceRequest.getPlan()); // <-- FIX APPLIED HERE
+        payment.setPlanPurchased(serviceRequest.getPlan());
         payment.setCurrency("USD");
         payment.setStatus("PENDING_SESSION_CREATION");
         payment.setTransactionDate(LocalDateTime.now());
 
-        // --- 2. Build Stripe Session Parameters (Uses a helper variable for quantity) ---
-
-        // Create a PaymentIntent with the order amount and currency
+        // Build Stripe Session Parameters
         SessionCreateParams.LineItem.PriceData.ProductData productData =
                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
                         .setName(String.valueOf(serviceRequest.getPlan()))
                         .build();
 
-        // Create new line item with the above product data and associated price
         SessionCreateParams.LineItem.PriceData priceData =
                 SessionCreateParams.LineItem.PriceData.builder()
                         .setCurrency("USD")
@@ -83,7 +73,6 @@ public class StripeService {
                         .setProductData(productData)
                         .build();
 
-        // Create new line item with the above price data
         SessionCreateParams.LineItem lineItem =
                 SessionCreateParams
                         .LineItem.builder()
@@ -91,40 +80,42 @@ public class StripeService {
                         .setPriceData(priceData)
                         .build();
 
-        // --- 3. Save Payment record before calling Stripe to ensure we have a local ID ---
+        // Save Payment record before calling Stripe
         try {
             payment = paymentRepository.save(payment);
         } catch (Exception e) {
             logger.error("Failed to save initial pending payment record.", e);
-            return StripeResponse.builder().status("FAILED").message("Internal database error: " + e.getMessage()).build();
+            return StripeResponse.builder()
+                    .status("FAILED")
+                    .message("Internal database error: " + e.getMessage())
+                    .build();
         }
 
-        // Create new session with the line items
+        // Create Stripe session with metadata
         SessionCreateParams params =
                 SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.PAYMENT)
-                        // Append CHECKOUT_SESSION_ID to success URL for post-payment processing
                         .setSuccessUrl("http://localhost:5173/paymentSuccess?session_id={CHECKOUT_SESSION_ID}")
                         .setCancelUrl("http://localhost:5173/paymentFailure")
                         .addLineItem(lineItem)
-                        // Add metadata to link Stripe session back to our Payment record
                         .putMetadata("local_payment_id", String.valueOf(payment.getId()))
                         .putMetadata("user_id", jwt.getClaims().get("userId").toString())
+                        .putMetadata("username", jwt.getClaims().get("name").toString())
+                        .putMetadata("email", jwt.getSubject())
+                        .putMetadata("plan", serviceRequest.getPlan().toString())
                         .build();
 
-        // --- 4. Create Stripe session and update Payment record ---
         Session session = null;
         try {
             session = Session.create(params);
 
-            // Update the entity with the Stripe Session ID and change status to SENT_TO_STRIPE
+            // Update the entity with the Stripe Session ID
             payment.setStripeSessionId(session.getId());
             payment.setStatus("SENT_TO_STRIPE");
             paymentRepository.save(payment);
 
         } catch (StripeException e) {
             logger.error("Failed to create Stripe session.", e);
-            // If Stripe creation fails, mark the local payment record as FAILED and save
             payment.setStatus("FAILED_SESSION_CREATION");
             paymentRepository.save(payment);
 
@@ -134,34 +125,30 @@ public class StripeService {
                     .message("Payment session could not be created: " + e.getMessage())
                     .build();
         }
-        handleSuccessfulPayment(session.getId());
 
-        StorageUpgradeNotification storageUpgradeNotification = new StorageUpgradeNotification(
-                jwt.getSubject(),jwt.getClaims().get("name").toString(),
-                serviceRequest.getPlan().toString(), Math.toIntExact(getQuantity(Plan.valueOf(serviceRequest.getPlan().toString())))
-        );
-        queueService.publishPlanUpgradeEmailRequest(storageUpgradeNotification);
+        // ✅ REMOVED: handleSuccessfulPayment(session.getId());
+        // ✅ REMOVED: queueService.publishPlanUpgradeEmailRequest(storageUpgradeNotification);
+
+        // These will now be called ONLY from the webhook after payment is confirmed
 
         return StripeResponse
                 .builder()
                 .status("SUCCESS")
-                .message("Payment session created ")
+                .message("Payment session created")
                 .sessionId(session.getId())
                 .sessionUrl(session.getUrl())
                 .build();
     }
 
     /**
-     * Handles the successful completion of a Stripe Checkout Session, updating the local
-     * payment status and publishing a Kafka event to upgrade the user's plan.
-     * This method is typically called by a Webhook Controller reacting to stripe's
-     * 'checkout.session.completed' event.
+     * Handles the successful completion of a Stripe Checkout Session.
+     * This method should ONLY be called by the Webhook Controller when Stripe
+     * sends a 'checkout.session.completed' event.
      *
      * @param stripeSessionId The ID of the successful Stripe Session.
      */
     public void handleSuccessfulPayment(String stripeSessionId) {
         // 1. Find the payment by session ID
-        // NOTE: This assumes PaymentRepository has findByStripeSessionId(String sessionId) defined.
         Optional<Payment> paymentOpt = paymentRepository.findByStripeSessionId(stripeSessionId);
 
         if (paymentOpt.isEmpty()) {
@@ -188,6 +175,30 @@ public class StripeService {
         );
         queueService.publishPlanUpgradeInfo(upgradeDto);
 
-        logger.info("Payment for session {} marked SUCCESS and plan upgrade event published for User ID {}", stripeSessionId, payment.getUserId());
+        // 4. Retrieve user info from Stripe session metadata for email notification
+        try {
+            Stripe.apiKey = secretKey;
+            Session session = Session.retrieve(stripeSessionId);
+
+            String email = session.getMetadata().get("email");
+            String username = session.getMetadata().get("username");
+            String plan = payment.getPlanPurchased().toString();
+            int storageGB = Math.toIntExact(getQuantity(payment.getPlanPurchased()));
+
+            StorageUpgradeNotification notification = new StorageUpgradeNotification(
+                    email,
+                    username,
+                    plan,
+                    storageGB
+            );
+            queueService.publishPlanUpgradeEmailRequest(notification);
+
+        } catch (StripeException e) {
+            logger.error("Failed to retrieve session metadata for email notification", e);
+            // Continue execution - plan upgrade was successful even if email fails
+        }
+
+        logger.info("Payment for session {} marked SUCCESS and plan upgrade event published for User ID {}",
+                stripeSessionId, payment.getUserId());
     }
 }

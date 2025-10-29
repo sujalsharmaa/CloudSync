@@ -12,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProcessedDocument {
+    private String id;
     private String fileName;
     private String fileType;
     private List<String> tags;
