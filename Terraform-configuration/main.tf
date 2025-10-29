@@ -116,9 +116,57 @@ resource "aws_key_pair" "deployer_key" {
   public_key = file(".ssh/id_rsa_terraform_new.pub") # Path to your local public SSH key
 }
 
+# 1. The Bucket (without the 'acl' argument)
 resource "aws_s3_bucket" "my_bucket" {
-  bucket = "your-rag-pipeline-bucket1"  # Must be globally unique
-  acl = "private"
+  bucket = "your-rag-pipeline-bucket" # Must be globally unique
+}
+
+resource "aws_iam_role" "s3_access_role" {
+  name = "s3-env-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+
+resource "aws_iam_policy" "s3_read_policy" {
+  name        = "S3ReadPolicy"
+  description = "Allow EC2 to read .env from S3"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [ "s3:GetObject", "s3:PutObject", "s3:DeleteObject" ],
+      "Resource": "arn:aws:s3:::${aws_s3_bucket.my_bucket.id}/*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "attach_policy" {
+  policy_arn = aws_iam_policy.s3_read_policy.arn
+  role       = aws_iam_role.s3_access_role.name
+}
+
+resource "aws_iam_instance_profile" "instance_profile" {
+  name = "s3-access-profile"
+  role = aws_iam_role.s3_access_role.name
 }
 
 resource "aws_instance" "docker_host8" {
