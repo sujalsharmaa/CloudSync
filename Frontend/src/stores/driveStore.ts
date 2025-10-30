@@ -236,7 +236,10 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
 
   setFiles: (files) => set({ files }),
   setCurrentFolder: (folderId) => set({ currentFolder: folderId }),
-  setSelectedFiles: (fileIds) => set({ selectedFiles: fileIds }),
+  // In your driveStore
+setSelectedFiles: (fileIds: string[]) => {
+  set({ selectedFiles: fileIds });
+},
   toggleFileSelection: (fileId) => {
     const { selectedFiles } = get();
     const newSelection = selectedFiles.includes(fileId)

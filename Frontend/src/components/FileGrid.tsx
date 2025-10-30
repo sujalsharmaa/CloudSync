@@ -13,7 +13,7 @@ import SplashCursor from "@/components/SplashCursor"; // Assuming SplashCursor i
 import { useDriveStore, type DriveFile } from "@/stores/driveStore";
 import { FilePreview } from "@/components/FilePreview";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useDebounce } from "@/useDebounce"; // Assuming useDebounce is in src/
 import { FileActionsToolbar } from "@/components/FileActionsToolbar"; // Assuming FileActionsToolbar is here
 
@@ -28,6 +28,32 @@ const ActionOverlaySpinner = () => (
     <Loader2 className="h-8 w-8 animate-spin text-primary" /> {/* Larger spinner */}
   </div>
 );
+
+// --- SELECTION RECTANGLE COMPONENT ---
+interface SelectionRectangleProps {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+}
+const SelectionRectangle = ({ start, end }: SelectionRectangleProps) => {
+  const left = Math.min(start.x, end.x);
+  const top = Math.min(start.y, end.y);
+  const width = Math.abs(end.x - start.x);
+  const height = Math.abs(end.y - start.y);
+
+  if (width < 5 || height < 5) return null;
+
+  return (
+    <div
+      className="absolute z-30 border-2 border-primary bg-primary/20 pointer-events-none"
+      style={{
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+      }}
+    />
+  );
+};
 // -------------------------------------------------------------------------
 
 /** Safe formatting helpers */
@@ -91,9 +117,18 @@ export function FileGrid() {
     fetchRecycledFiles,
     addFile,
     isLoading,
-    isUploading,
+    //isUploading,
     fileActionLoading: fileActionLoadingSet,
+    setSelectedFiles, // Make sure this exists in your store, or add it
   } = useDriveStore();
+
+  // Drag selection state
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const fileRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const gradients = [
     "from-indigo-500 via-sky-500 to-teal-500",
@@ -139,6 +174,93 @@ export function FileGrid() {
     fetchRecycledFiles,
     fetchStarredFiles,
   ]);
+
+  // Drag selection handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only start selection with left mouse button and not on interactive elements
+    if (e.button !== 0 || 
+        (e.target as Element).closest('button') || 
+        (e.target as Element).closest('input') ||
+        (e.target as Element).closest('.file-actions-toolbar')) {
+      return;
+    }
+
+    setIsSelecting(true);
+    setSelectionStart({ x: e.clientX, y: e.clientY });
+    setSelectionEnd({ x: e.clientX, y: e.clientY });
+
+    // Clear selection if not holding Ctrl/Cmd
+    if (!e.ctrlKey && !e.metaKey) {
+      setSelectedFiles([]);
+    }
+  }, [setSelectedFiles]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isSelecting || !selectionStart) return;
+
+    setSelectionEnd({ x: e.clientX, y: e.clientY });
+
+    // Calculate selected files
+    if (containerRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const selectionRect = {
+        left: Math.min(selectionStart.x, e.clientX) - containerRect.left,
+        top: Math.min(selectionStart.y, e.clientY) - containerRect.top,
+        right: Math.max(selectionStart.x, e.clientX) - containerRect.left,
+        bottom: Math.max(selectionStart.y, e.clientY) - containerRect.top,
+      };
+
+      const newlySelectedFiles: string[] = [];
+
+      fileRefs.current.forEach((fileElement, fileId) => {
+        const fileRect = fileElement.getBoundingClientRect();
+        const relativeFileRect = {
+          left: fileRect.left - containerRect.left,
+          top: fileRect.top - containerRect.top,
+          right: fileRect.right - containerRect.left,
+          bottom: fileRect.bottom - containerRect.top,
+        };
+
+        // Check if file element intersects with selection rectangle
+        const intersects = !(
+          selectionRect.right < relativeFileRect.left ||
+          selectionRect.left > relativeFileRect.right ||
+          selectionRect.bottom < relativeFileRect.top ||
+          selectionRect.top > relativeFileRect.bottom
+        );
+
+        if (intersects) {
+          newlySelectedFiles.push(fileId);
+        }
+      });
+
+      // Update selection (add to existing if Ctrl/Cmd is held)
+      if (newlySelectedFiles.length > 0) {
+        const currentSelection = new Set(selectedFiles);
+        newlySelectedFiles.forEach(fileId => currentSelection.add(fileId));
+        setSelectedFiles(Array.from(currentSelection));
+      }
+    }
+  }, [isSelecting, selectionStart, selectedFiles, setSelectedFiles]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsSelecting(false);
+    setSelectionStart(null);
+    setSelectionEnd(null);
+  }, []);
+
+  // Add event listeners for drag selection
+  useEffect(() => {
+    if (isSelecting) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isSelecting, handleMouseMove, handleMouseUp]);
 
   const validFiles = (files ?? []).filter(file => file && file.id);
 
@@ -205,6 +327,15 @@ export function FileGrid() {
     return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
   });
 
+  // Register file element refs
+  const registerFileRef = useCallback((fileId: string, element: HTMLDivElement | null) => {
+    if (element) {
+      fileRefs.current.set(fileId, element);
+    } else {
+      fileRefs.current.delete(fileId);
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
       <h1
@@ -233,7 +364,16 @@ export function FileGrid() {
 
       {sortedFiles.length > 0 && (
         viewMode === "list" ? (
-        <div className="space-y-1">
+        <div 
+          ref={containerRef}
+          className="space-y-1 relative"
+          onMouseDown={handleMouseDown}
+        >
+          {/* Selection Rectangle */}
+          {isSelecting && selectionStart && selectionEnd && (
+            <SelectionRectangle start={selectionStart} end={selectionEnd} />
+          )}
+
           <div className="grid grid-cols-[auto_1fr_120px_120px_auto_40px] gap-4 px-4 py-2 text-sm text-muted-foreground border-b">
             <div className="w-6"></div>
             <div>Name</div>
@@ -252,10 +392,11 @@ export function FileGrid() {
             return (
               <div
                 key={file.id}
+                ref={(el) => registerFileRef(file.id, el)}
                 className={cn(
-                  "grid grid-cols-[auto_1fr_120px_120px_auto_40px] items-center gap-4 px-4 py-3 hover:bg-muted/50 rounded-lg transition-smooth group cursor-pointer relative",
+                  "grid grid-cols-[auto_1fr_120px_120px_auto_40px] items-center gap-4 px-4 py-3 hover:bg-muted/50 rounded-lg transition-smooth group cursor-pointer relative file-item",
                   isSelected && "bg-muted/50",
-                  isUploading && "opacity-50 pointer-events-none transition-opacity"
+                  isLoading && "opacity-50 pointer-events-none transition-opacity"
                 )}
                 onClick={isFileActionLoading ? (e) => e.stopPropagation() : () => toggleFileSelection(file.id)}
               >
@@ -322,7 +463,16 @@ export function FileGrid() {
           <FileActionsToolbar />
         </div>
       ) : (
-        <div className="relative">
+        <div 
+          ref={containerRef}
+          className="relative"
+          onMouseDown={handleMouseDown}
+        >
+          {/* Selection Rectangle */}
+          {isSelecting && selectionStart && selectionEnd && (
+            <SelectionRectangle start={selectionStart} end={selectionEnd} />
+          )}
+
           {/* <div className="absolute inset-0 z-0 overflow-hidden rounded-lg pointer-events-none">
              <SplashCursor />
           </div> */}
@@ -337,10 +487,11 @@ export function FileGrid() {
               return (
                 <Card
                   key={file.id}
+                  ref={(el) => registerFileRef(file.id, el)}
                   className={cn(
-                    "p-4 hover:shadow-hover transition-smooth cursor-pointer group animate-scale-in relative z-10 overflow-hidden",
+                    "p-4 hover:shadow-hover transition-smooth cursor-pointer group animate-scale-in relative z-10 overflow-hidden file-item",
                     isSelected && "ring-2 ring-primary",
-                    isUploading && "opacity-50 pointer-events-none transition-opacity"
+                    isLoading && "opacity-50 pointer-events-none transition-opacity"
                   )}
                   onClick={isFileActionLoading ? (e) => e.stopPropagation() : () => toggleFileSelection(file.id)}
                 >
@@ -396,4 +547,3 @@ export function FileGrid() {
     </div>
   );
 }
-
