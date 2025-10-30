@@ -163,7 +163,7 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
   fetchUserStoragePlanAndConsumption: async()=>{
     try {
             const { token } = useAuthStore.getState();
-      const res = await axios.get('http://localhost:8080/api/auth/getStoragePlanAndConsumption', {
+      const res = await axios.get('https://d8px74aqahhhe.cloudfront.net/api/auth/getStoragePlanAndConsumption', {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log(res.data)
@@ -597,7 +597,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     try {
-      const res = await axios.get<User>('http://localhost:8080/api/auth/user', {
+      const res = await axios.get<User>('http://mylb-627534277.us-east-1.elb.amazonaws.com/api/auth/user', {
         headers: {
           Authorization: `Bearer ${currentToken}`
         }
