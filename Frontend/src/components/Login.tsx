@@ -2,7 +2,7 @@ import React from "react";
 
 const Login: React.FC = () => {
   const loginWithGoogle = () => {
-    window.open("http://mylb-627534277.us-east-1.elb.amazonaws.com/api/auth/login/google", "_self");
+    window.open("http://lg2-1375847449.us-east-1.elb.amazonaws.com/api/auth/login/google", "_self");
   };
 
   return (
