@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tags-generation-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudsync-tags-generation-service
+  template:
+    metadata:
+      labels:
+        app: cloudsync-tags-generation-service
+    spec:
+      containers:
+        - name: cloudsync-tags-generation-service-container
+          image: sujalsharma/tags-generation-service:latest
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: cloudsync-tags-generation-service-configmap
+            - secretRef:
+                name: cloudsync-tags-generation-service-secret
+          volumeMounts:
+            - name: cloudsync-pv
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc

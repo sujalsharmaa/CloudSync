@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudsync-payment-service
+  template:
+    metadata:
+      labels:
+        app: cloudsync-payment-service
+    spec:
+      containers:
+        - name: cloudsync-payment-service-container
+          image: sujalsharma/payment-service:latest
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: cloudsync-payment-service-configmap
+            - secretRef:
+                name: cloudsync-payment-service-secret
+          volumeMounts:
+            - name: cloudsync-pv
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc

@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudsync-auth-service
+  template:
+    metadata:
+      labels:
+        app: cloudsync-auth-service
+    spec:
+      containers:
+        - name: cloudsync-auth-service-container
+          image: sujalsharma/auth-service:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: cloudsync-auth-service-configmap
+            - secretRef:
+                name: cloudsync-auth-service-secret
+          volumeMounts:
+            - name: cloudsync-pv
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc

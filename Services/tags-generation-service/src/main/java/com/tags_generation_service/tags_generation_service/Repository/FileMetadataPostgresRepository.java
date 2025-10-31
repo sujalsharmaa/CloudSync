@@ -20,10 +20,10 @@ public interface FileMetadataPostgresRepository extends JpaRepository<FileMetada
 
     // Use a native query with a database-specific function for case-insensitive search.
     // This is for PostgreSQL's ILIKE operator.
-    @Query(value = "SELECT * FROM file_metadata WHERE tags ILIKE %?1%", nativeQuery = true)
+    @Query(value = "SELECT * FROM file_metadata WHERE tags LIKE %?1%", nativeQuery = true)
     List<FileMetadataPostgres> findByTagsContaining(String tag);
 
-    @Query(value = "SELECT * FROM file_metadata WHERE categories ILIKE %?1%", nativeQuery = true)
+    @Query(value = "SELECT * FROM file_metadata WHERE categories LIKE %?1%", nativeQuery = true)
     List<FileMetadataPostgres> findByCategoriesContaining(String category);
 
     // This derived query method still works as it maps to a standard `LIKE`

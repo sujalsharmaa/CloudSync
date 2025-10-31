@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudsync-search-service
+  template:
+    metadata:
+      labels:
+        app: cloudsync-search-service
+    spec:
+      containers:
+        - name: cloudsync-search-service-container
+          image: sujalsharma/search-service:latest
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: cloudsync-search-service-configmap
+            - secretRef:
+                name: cloudsync-search-service-secret
+          volumeMounts:
+            - name: cloudsync-pv
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc

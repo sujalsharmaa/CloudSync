@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upload-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudsync-upload-service
+  template:
+    metadata:
+      labels:
+        app: cloudsync-upload-service
+    spec:
+      containers:
+        - name: cloudsync-upload-service-container
+          image: sujalsharma/upload-service:latest
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: cloudsync-upload-service-configmap
+            - secretRef:
+                name: cloudsync-upload-service-secret
+          volumeMounts:
+            - name: cloudsync-pv
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc
