@@ -29,9 +29,6 @@ spec:
       labels:
         app: zookeeper
     spec:
-      securityContext:
-          runAsUser: 1000
-          fsGroup: 1000
       containers:
       - name: zookeeper
         image: confluentinc/cp-zookeeper:7.0.1
@@ -48,10 +45,17 @@ spec:
           # This config is for a single-node Zookeeper
           - name: ZOOKEEPER_SERVERS
             value: "zookeeper-0.zookeeper-svc.default.svc.cluster.local:2888:3888"
-        volumeMounts:
-        - name: cloudsync-pv
-          mountPath: /data/db
-      volumes:
+        securityContext:
+                runAsUser: 1000
+                fsGroup: 1000
+        containers:
+        - name: zookeeper
+          # ... (image, ports, env) ...
+          volumeMounts:
+          - name: cloudsync-pv
+            mountPath: /data/db # This path must match your Zookeeper config
+            
+        volumes:  # <-- CORRECT location (inside spec.template.spec)
         - name: cloudsync-pv
           persistentVolumeClaim:
             claimName: cloudsync-pvc
