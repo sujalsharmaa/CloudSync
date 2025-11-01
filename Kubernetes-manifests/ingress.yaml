@@ -1,0 +1,71 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tornado-socket
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - auth.sujalsharma.in
+        - file.sujalsharma.in
+        - upload.sujalsharma.in
+        - search.sujalsharma.in
+        - payment.sujalsharma.in
+      secretName: websocket-tls
+  ingressClassName: nginx
+  rules:
+  - host: auth.sujalsharma.in
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudsync-auth-service-Service
+            port:
+              number: 8080
+  - host: file.sujalsharma.in
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudsync-tags-generation-service-Service
+            port:
+              number: 8082  
+  - host: upload.sujalsharma.in
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudsync-upload-service-Service
+            port:
+              number: 8083
+  - host: payment.sujalsharma.in
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudsync-payment-service-Service
+            port:
+              number: 8084
+  - host: search.sujalsharma.in
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudsync-upload-service-Service
+            port:
+              number: 8085
+                           

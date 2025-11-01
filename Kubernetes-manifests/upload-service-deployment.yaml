@@ -19,13 +19,13 @@ spec:
             - containerPort: 8083
           envFrom:
             - configMapRef:
-                name: cloudsync-upload-service-configmap
+                name: file-service-config
             - secretRef:
-                name: cloudsync-upload-service-secret
-          volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
-      volumes:
-        - name: cloudsync-pv
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+                name: file-service-secret
+      #     volumeMounts:
+      #       - name: cloudsync-pv
+      #         mountPath: /data/db
+      # volumes:
+      #   - name: cloudsync-pv
+      #     persistentVolumeClaim:
+      #       claimName: cloudsync-pvc

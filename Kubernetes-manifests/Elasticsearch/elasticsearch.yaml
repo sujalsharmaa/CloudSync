@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-config
+data:
+  # === ELASTICSEARCH CONFIGURATION ===
+  # These are passed as environment variables to the container
+  
+  # Name of the cluster
+  cluster.name: "my-es-cluster"
+  
+  # Set discovery type to "single-node"
+  # This is required for a single-broker setup to start
+  discovery.type: "single-node"
+  
+  # Disable XPack security to avoid needing passwords
+  xpack.security.enabled: "false"
+  
+  # Bind to all network interfaces
+  http.host: "0.0.0.0"
+  
+  # Set Java heap size (e.g., 512MB)
+  # IMPORTANT: Set this to a reasonable value for your cluster
+  # to prevent the pod from using too much memory.
+  ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # This service provides a stable ClusterIP for your applications to use
+  name: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  ports:
+  - port: 9200
+    name: http
+    targetPort: 9200
+  selector:
+    app: elasticsearch
+  # Default type is ClusterIP, which is what we want
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # This is the headless service for the StatefulSet
+  name: elasticsearch-headless
+  labels:
+    app: elasticsearch
+spec:
+  ports:
+  - port: 9200
+    name: http
+  - port: 9300
+    name: transport
+  # Headless service
+  clusterIP: None
+  selector:
+    app: elasticsearch
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+spec:
+  # This must match the name of the headless service
+  serviceName: elasticsearch-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      # Elasticsearch needs this init container to set permissions
+      # on the persistent volume
+      initContainers:
+      - name: set-vm-max-map-count
+        image: busybox:1.36
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: elasticsearch
+        # Use a specific version from Elastic's registry
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+        ports:
+        - containerPort: 9200
+          name: http
+        - containerPort: 9300
+          name: transport
+        envFrom:
+          # Load all key-value pairs from the ConfigMap as env vars
+          - configMapRef:
+              name: elasticsearch-config
+  #       volumeMounts:
+  #       - name: es-data
+  #         mountPath: /usr/share/elasticsearch/data
+  # # Create a persistent volume for the Elasticsearch data
+  # volumeClaimTemplates:
+  # - metadata:
+  #     name: es-data
+  #   spec:
+  #     accessModes: [ "ReadWriteOnce" ]
+  #     resources:
+  #       requests:
+  #         storage: 10Gi

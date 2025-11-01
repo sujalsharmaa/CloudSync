@@ -19,13 +19,13 @@ spec:
             - containerPort: 8086
           envFrom:
             - configMapRef:
-                name: cloudsync-notification-service-configmap
+                name: notification-service-config
             - secretRef:
-                name: cloudsync-notification-service-secret
-          volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
-      volumes:
-        - name: cloudsync-pv
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+                name: notification-service-secret
+      #     volumeMounts:
+      #       - name: cloudsync-pv
+      #         mountPath: /data/db
+      # volumes:
+      #   - name: cloudsync-pv
+      #     persistentVolumeClaim:
+      #       claimName: cloudsync-pvc

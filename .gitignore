@@ -18,6 +18,8 @@ Desktop.ini
 .classpath
 .settings/
 
+kubernetes-manifests/secrets/*
+
 ################################################################################
 # Java / Spring Boot (Maven + Gradle) – for all microservices
 ################################################################################

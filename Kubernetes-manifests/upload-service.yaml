@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudsync-upload-service-Service
+spec:
+  selector:
+    app: cloudsync-upload-service
+  ports:
+    - protocol: TCP
+      port: 8083
+      targetPort: 8083
+  type: LoadBalancer
+  sessionAffinity: ClientIP

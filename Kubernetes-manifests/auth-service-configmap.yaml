@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+data:
+  # This key (application.yaml) will be mounted as a file
+  application.yaml: |
+    server:
+      port: 8080
+    spring:
+      main:
+        allow-bean-definition-overriding: true
+      # Database configuration
+      datasource:
+        url: jdbc:postgresql://postgres.default.svc.cluster.local:5432/postgres
+        driver-class-name: org.postgresql.Driver
+        # Username and password will be injected from a Secret
+      kafka:
+        # UPDATED to use the internal Kafka service name
+        bootstrap-servers: kafka-svc.default.svc.cluster.local:9092
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        consumer:
+          group-id: rag-pipeline-group
+          auto-offset-reset: earliest
+          key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-serializer: org.apache.kafka.common.serialization.StringDeserializer
+      jpa:
+        database-platform: org.hibernate.dialect.PostgreSQLDialect
+        hibernate:
+          ddl-auto: update
+        show-sql: true
+      # Google OAuth2 Client configuration
+      security:
+        oauth2:
+          client:
+            registration:
+              google:
+                # Client ID and Secret will be injected from a Secret
+                redirect-uri: "https://drive.sujalsharma.in/login/oauth2/code/google"
+                scope:
+                  - openid
+                  - profile
+                  - email
+      h2:
+        console:
+          enabled: true
+    app:
+      jwt:
+        # JWT Secret will be injected from a Secret
+        expiration: 86400000 # 24 hours
+      frontend:
+        url: https://drive.sujalsharma.in

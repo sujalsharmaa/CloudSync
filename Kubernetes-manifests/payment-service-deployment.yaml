@@ -19,13 +19,13 @@ spec:
             - containerPort: 8084
           envFrom:
             - configMapRef:
-                name: cloudsync-payment-service-configmap
+                name: payment-service-config
             - secretRef:
-                name: cloudsync-payment-service-secret
-          volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
-      volumes:
-        - name: cloudsync-pv
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+                name: payment-service-secret
+      #     volumeMounts:
+      #       - name: cloudsync-pv
+      #         mountPath: /data/db
+      # volumes:
+      #   - name: cloudsync-pv
+      #     persistentVolumeClaim:
+      #       claimName: cloudsync-pvc

@@ -19,13 +19,13 @@ spec:
             - containerPort: 8085
           envFrom:
             - configMapRef:
-                name: cloudsync-search-service-configmap
+                name: search-service-config
             - secretRef:
-                name: cloudsync-search-service-secret
-          volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
-      volumes:
-        - name: cloudsync-pv
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+                name: search-service-secret
+      #     volumeMounts:
+      #       - name: cloudsync-pv
+      #         mountPath: /data/db
+      # volumes:
+      #   - name: cloudsync-pv
+      #     persistentVolumeClaim:
+      #       claimName: cloudsync-pvc

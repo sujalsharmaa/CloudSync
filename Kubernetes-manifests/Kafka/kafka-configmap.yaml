@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+data:
+  # === KAFKA CONFIGURATION ===
+  
+  # This ID must be unique for each broker
+  KAFKA_BROKER_ID: "1"
+  
+  # The address of the Zookeeper service we created in zookeeper.yaml
+  KAFKA_ZOOKEEPER_CONNECT: "zookeeper-svc.default.svc.cluster.local:2181"
+  
+  # The internal address that other pods in the cluster will use
+  # to communicate with this Kafka broker.
+  KAFKAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-0.kafka-svc.default.svc.cluster.local:9092"
+  
+  # The address the broker will listen on
+  KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092"
+  
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT"
+  KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+  
+  # Replication factor for internal topics (e.g., offsets)
+  # For a single-broker setup, this MUST be 1
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-svc
+  labels:
+    app: kafka
+spec:
+  ports:
+  - port: 9092
+    name: client
+  # Headless service for the StatefulSet
+  clusterIP: None
+  selector:
+    app: kafka
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  serviceName: kafka-svc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.0.1
+        ports:
+        - containerPort: 9092
+          name: client
+        envFrom:
+          # Load all key-value pairs from the ConfigMap as environment variables
+          - configMapRef:
+              name: kafka-config
+  #       volumeMounts:
+  #       - name: kafka-data
+  #         mountPath: /var/lib/kafka/data
+  # # Create a persistent volume for the Kafka broker's data
+  # volumeClaimTemplates:
+  # - metadata:
+  #     name: kafka-data
+  #   spec:
+  #     accessModes: [ "ReadWriteOnce" ]
+  #     resources:
+  #       requests:
+  #         storage: 10Gi

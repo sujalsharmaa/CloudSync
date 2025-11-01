@@ -19,13 +19,13 @@ spec:
             - containerPort: 8082
           envFrom:
             - configMapRef:
-                name: cloudsync-tags-generation-service-configmap
+                name: tags-generation-service-config
             - secretRef:
-                name: cloudsync-tags-generation-service-secret
-          volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
-      volumes:
-        - name: cloudsync-pv
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+                name: tags-generation-service-secret
+      #     volumeMounts:
+      #       - name: cloudsync-pv
+      #         mountPath: /data/db
+      # volumes:
+      #   - name: cloudsync-pv
+      #     persistentVolumeClaim:
+      #       claimName: cloudsync-pvc
