@@ -48,9 +48,6 @@ kind: StatefulSet
 metadata:
   name: kafka
 spec:
-  securityContext:
-    runAsUser: 1000
-    fsGroup: 1000
   serviceName: kafka-svc
   replicas: 1
   selector:
