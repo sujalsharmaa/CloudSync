@@ -95,4 +95,4 @@ spec:
             name: elasticsearch-config
         - name: cloudsync-pv
           persistentVolumeClaim:
-            claimName: cloudsync-pvc
+            claimName: cloudsync-pvc1
