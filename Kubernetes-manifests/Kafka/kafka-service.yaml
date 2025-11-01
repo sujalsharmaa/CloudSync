@@ -29,6 +29,16 @@ spec:
       labels:
         app: zookeeper
     spec:
+      # -----------------------------------------------------------------
+      # CORRECTED STRUCTURE: securityContext is a child of spec
+      # -----------------------------------------------------------------
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+
+      # -----------------------------------------------------------------
+      # CORRECTED STRUCTURE: containers is a child of spec
+      # -----------------------------------------------------------------
       containers:
       - name: zookeeper
         image: confluentinc/cp-zookeeper:7.0.1
@@ -36,26 +46,31 @@ spec:
         - containerPort: 2181
           name: client
         env:
-          - name: ZOOKEEPER_CLIENT_PORT
-            value: "2181"
-          - name: ZOOKEEPER_TICK_TIME
-            value: "2000"
-          - name: ZOOKEEPER_SERVER_ID
-            value: "1"
-          # This config is for a single-node Zookeeper
-          - name: ZOOKEEPER_SERVERS
-            value: "zookeeper-0.zookeeper-svc.default.svc.cluster.local:2888:3888"
-        securityContext:
-                runAsUser: 1000
-                fsGroup: 1000
-        containers:
-        - name: zookeeper
-          # ... (image, ports, env) ...
-          volumeMounts:
-          - name: cloudsync-pv
-            mountPath: /data/db # This path must match your Zookeeper config
-            
-        volumes:  # <-- CORRECT location (inside spec.template.spec)
-        - name: cloudsync-pv
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+        - name: ZOOKEEPER_SERVER_ID
+          value: "1"
+        - name: ZOOKEEPER_SERVERS
+          value: "zookeeper-0.zookeeper-svc.default.svc.cluster.local:2888:3888"
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /var/lib/zookeeper/data
+        - name: zookeeper-log
+          mountPath: /var/lib/zookeeper/log
+      
+      # -----------------------------------------------------------------
+      # CORRECTED STRUCTURE: volumes is a child of spec, not containers
+      # -----------------------------------------------------------------
+      volumes:
+        - name: zookeeper-data
           persistentVolumeClaim:
-            claimName: cloudsync-pvc
+            claimName: zookeeper-data
+        - name: zookeeper-log
+          persistentVolumeClaim:
+            claimName: zookeeper-log
+
+  # Note: I'm using the default volumeClaimTemplates for StatefulSets
+  # which is often cleaner, but the "volumes" block above will also work
+  # if your PVCs (zookeeper-data, zookeeper-log) already exist.
