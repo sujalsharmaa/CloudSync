@@ -25,7 +25,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: cloudsync-auth-service-Service
+            name: cloudsync-auth-service-service
             port:
               number: 8080
   - host: file.sujalsharma.in
@@ -35,7 +35,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: cloudsync-tags-generation-service-Service
+            name: cloudsync-tags-generation-service-service
             port:
               number: 8082  
   - host: upload.sujalsharma.in
@@ -45,7 +45,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: cloudsync-upload-service-Service
+            name: cloudsync-upload-service-service
             port:
               number: 8083
   - host: payment.sujalsharma.in
@@ -55,7 +55,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: cloudsync-payment-service-Service
+            name: cloudsync-payment-service-service
             port:
               number: 8084
   - host: search.sujalsharma.in
@@ -65,7 +65,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: cloudsync-upload-service-Service
+            name: cloudsync-upload-service-service
             port:
               number: 8085
                            
