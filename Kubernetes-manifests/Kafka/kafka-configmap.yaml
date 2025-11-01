@@ -11,9 +11,10 @@ data:
   # The address of the Zookeeper service we created in zookeeper.yaml
   KAFKA_ZOOKEEPER_CONNECT: "zookeeper-svc.default.svc.cluster.local:2181"
   
+  # --- FIX 1: Typo corrected ---
   # The internal address that other pods in the cluster will use
   # to communicate with this Kafka broker.
-  KAFKAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-0.kafka-svc.default.svc.cluster.local:9092"
+  KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-0.kafka-svc.default.svc.cluster.local:9092"
   
   # The address the broker will listen on
   KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://0.0.0.0:9092
@@ -58,6 +59,11 @@ spec:
       labels:
         app: kafka
     spec:
+      # --- FIX 2: Added securityContext to fix permissions ---
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      # --- END OF FIX ---
       containers:
       - name: kafka
         image: confluentinc/cp-kafka:7.0.1
@@ -70,9 +76,13 @@ spec:
               name: kafka-config
         volumeMounts:
           - name: cloudsync-pv
-            mountPath: /data/db
+            # --- FIX 3: Corrected mount path ---
+            mountPath: /var/lib/kafka/data
+            # --- END OF FIX ---
+      # --- FIX 4: Corrected indentation for volumes block ---
       volumes:
         - name: cloudsync-pv
           persistentVolumeClaim:
             claimName: cloudsync-pvc
+      # --- END OF FIX ---
 
