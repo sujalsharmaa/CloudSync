@@ -85,17 +85,21 @@ spec:
         # Mounts for the data and config
         volumeMounts:
         - name: kafka-data
+          # This must be the directory specified in server.properties (log.dirs)
           mountPath: /var/lib/kafka/data
+        # --- UPDATED SECTION ---
+        # We mount the "server.properties" key from the ConfigMap as a file
+        # This leaves the /etc/kafka directory writable.
         - name: kafka-config
-          mountPath: /etc/kafka
+          mountPath: /etc/kafka/server.properties
+          subPath: server.properties
+        # --- END OF UPDATE ---
       volumes:
       - name: kafka-config
         configMap:
           name: kafka-config
-      # --- UPDATED SECTION ---
-      # This now points to your existing PVC
+      # This section now points to your existing PVC
       - name: kafka-data
         persistentVolumeClaim:
           claimName: cloudsync-pvc
-      # --- END OF UPDATE ---
 
