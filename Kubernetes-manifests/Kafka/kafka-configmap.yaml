@@ -43,41 +43,36 @@ spec:
   selector:
     app: kafka
 ---
-# apiVersion: apps/v1
-# kind: StatefulSet
-# metadata:
-#   name: kafka
-# spec:
-#   serviceName: kafka-svc
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: kafka
-#   template:
-#     metadata:
-#       labels:
-#         app: kafka
-#     spec:
-#       containers:
-#       - name: kafka
-#         image: confluentinc/cp-kafka:7.0.1
-#         ports:
-#         - containerPort: 9092
-#           name: client
-#         envFrom:
-#           # Load all key-value pairs from the ConfigMap as environment variables
-#           - configMapRef:
-#               name: kafka-config
-#   #       volumeMounts:
-#   #       - name: kafka-data
-#   #         mountPath: /var/lib/kafka/data
-#   # # Create a persistent volume for the Kafka broker's data
-#   # volumeClaimTemplates:
-#   # - metadata:
-#   #     name: kafka-data
-#   #   spec:
-#   #     accessModes: [ "ReadWriteOnce" ]
-#   #     resources:
-#   #       requests:
-#   #         storage: 10Gi
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+spec:
+  serviceName: kafka-svc
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.0.1
+        ports:
+        - containerPort: 9092
+          name: client
+        envFrom:
+          # Load all key-value pairs from the ConfigMap as environment variables
+          - configMapRef:
+              name: kafka-config
+        volumeMounts:
+          - name: cloudsync-pv
+            mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc
 
