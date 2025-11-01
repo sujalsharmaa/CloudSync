@@ -87,12 +87,12 @@ spec:
             - name: es-config
               mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
               subPath: elasticsearch.yml
-            - name: cloudsync-pv
+            - name: cloudsync-pv1
               mountPath: /usr/share/elasticsearch/data
       volumes:
         - name: es-config
           configMap:
             name: elasticsearch-config
-        - name: cloudsync-pv
+        - name: cloudsync-pvc1
           persistentVolumeClaim:
-            claimName: cloudsync-pvc
+            claimName: cloudsync-pvc1
