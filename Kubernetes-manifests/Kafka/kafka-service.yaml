@@ -55,22 +55,22 @@ spec:
         - name: ZOOKEEPER_SERVERS
           value: "zookeeper-0.zookeeper-svc.default.svc.cluster.local:2888:3888"
         volumeMounts:
-        - name: zookeeper-data
-          mountPath: /var/lib/zookeeper/data
+        - name: cloudsync-pv
+          mountPath: cloudsync-pvc
         - name: zookeeper-log
-          mountPath: /var/lib/zookeeper/log
+          mountPath: cloudsync-pvc
       
       # -----------------------------------------------------------------
       # CORRECTED STRUCTURE: volumes is a child of spec, not containers
       # -----------------------------------------------------------------
       volumes:
-        - name: zookeeper-data
+        - name: cloudsync-pv
           persistentVolumeClaim:
-            claimName: zookeeper-data
+            claimName: cloudsync-pvc
         - name: zookeeper-log
           persistentVolumeClaim:
-            claimName: zookeeper-log
+            claimName: cloudsync-pvc
 
   # Note: I'm using the default volumeClaimTemplates for StatefulSets
   # which is often cleaner, but the "volumes" block above will also work
-  # if your PVCs (zookeeper-data, zookeeper-log) already exist.
+  # if your PVCs (cloudsync-pv, zookeeper-log) already exist.
