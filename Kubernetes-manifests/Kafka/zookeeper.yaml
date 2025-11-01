@@ -46,18 +46,18 @@ spec:
             - name: zookeeper-log
               mountPath: /var/lib/zookeeper/log
   # This creates the Persistent Volumes for Zookeeper data
-  volumeClaimTemplates:
-    - metadata:
-        name: zookeeper-data
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        resources:
-          requests:
-            storage: 5Gi
-    - metadata:
-        name: zookeeper-log
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        resources:
-          requests:
-            storage: 5Gi
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: zookeeper-data
+  #     spec:
+  #       accessModes: [ "ReadWriteOnce" ]
+  #       resources:
+  #         requests:
+  #           storage: 5Gi
+  #   - metadata:
+  #       name: zookeeper-log
+  #     spec:
+  #       accessModes: [ "ReadWriteOnce" ]
+  #       resources:
+  #         requests:
+  #           storage: 5Gi
