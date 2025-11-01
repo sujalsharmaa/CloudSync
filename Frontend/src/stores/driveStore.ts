@@ -1,10 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
-import * as Stomp from '@stomp/stompjs';
-import * as SockJS from 'sockjs-client';
 
-let stompClient: Stomp.Client | null = null;
-const BACKEND_URL = 'http://localhost:8086/ws';
 
 export interface DriveFile {
   id: string;
@@ -131,7 +127,7 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
     set({ isLoading: true });
     try {
       const { token } = useAuthStore.getState();
-      const res = await axios.get('http://localhost:8085/api/metadata/user/recent', { // Use a clean 'recent' endpoint
+      const res = await axios.get(`${import.meta.env.VITE_PUBLIC_SEARCH_SERVICE}/api/metadata/user/recent`, { // Use a clean 'recent' endpoint
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -206,7 +202,7 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
     set({ isLoading: true });
     try {
       const { token } = useAuthStore.getState();
-      const res = await axios.get('http://localhost:8085/api/metadata/user/starred', {
+      const res = await axios.get(`${import.meta.env.VITE_PUBLIC_SEARCH_SERVICE}/api/metadata/user/starred`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -265,7 +261,7 @@ setSelectedFiles: (fileIds: string[]) => {
     try {
       const { token } = useAuthStore.getState();
              console.log(Plan)
-        const res = await axios.post("http://localhost:8084/service/v1/checkout",
+        const res = await axios.post( `${import.meta.env.VITE_PUBLIC_PAYMENT_SERVICE}/service/v1/checkout`  ,
    
           {
             plan: Plan,
@@ -289,7 +285,7 @@ setSelectedFiles: (fileIds: string[]) => {
     try {
       const { token } = useAuthStore.getState();
       const res = await axios.post(
-        `http://localhost:8082/api/star/${fileId}`,
+        `${import.meta.env.VITE_PUBLIC_FILE_SERVICE}/api/star/${fileId}`,
         isStarred,
         {
           headers: {
@@ -331,7 +327,7 @@ toggleStar: async (fileId: string) => {
       // 3. Make the API call in the background
       const { token } = useAuthStore.getState();
       await axios.post(
-        `http://localhost:8082/api/star/${fileId}`,
+        `${import.meta.env.VITE_PUBLIC_FILE_SERVICE}/api/star/${fileId}`,
         newStarredStatus,
         {
           headers: {
@@ -364,7 +360,7 @@ MoveFileToTrash: async (filesToTrash: DriveFile[]) => {
       const { token } = useAuthStore.getState();
       const fileIds = filesToTrash.map(file => file.id);
 
-      await axios.delete('http://localhost:8082/api/MoveToRecycleBin', {
+      await axios.delete(`${import.meta.env.VITE_PUBLIC_FILE_SERVICE}/api/MoveToRecycleBin`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -390,7 +386,7 @@ MoveFileToTrash: async (filesToTrash: DriveFile[]) => {
        const { fetchRecycledFiles } = get();
       const fileIds = filesToRestore.map(file => file.id);
 
-      await axios.post('http://localhost:8082/api/RestoreFiles', fileIds, {
+      await axios.post(`${import.meta.env.VITE_PUBLIC_FILE_SERVICE}/api/RestoreFiles`, fileIds, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
@@ -411,7 +407,7 @@ MoveFileToTrash: async (filesToTrash: DriveFile[]) => {
        const { fetchRecycledFiles } = get();
       const fileIds = filesToDelete.map(file => file.id);
 
-      await axios.delete('http://localhost:8082/api/PermanentlyDeleteFiles', {
+      await axios.delete(`${import.meta.env.VITE_PUBLIC_FILE_SERVICE}/api/PermanentlyDeleteFiles`, {
         headers: { 'Authorization': `Bearer ${token}` },
         data: fileIds, // Use 'data' for DELETE requests with a body
       });
@@ -437,7 +433,7 @@ DownloadFiles: async (filesToDownload: DriveFile[]) => {
     const fileIds = filesToDownload.map((file) => file.id);
 
     const res = await axios.post(
-      'http://localhost:8082/api/DownloadFiles',
+      `${import.meta.env.VITE_PUBLIC_FILE_SERVICE}/api/DownloadFiles`,
       fileIds,
       {
         headers: {
@@ -476,12 +472,12 @@ DownloadFiles: async (filesToDownload: DriveFile[]) => {
       try {
         const { token } = useAuthStore.getState();
 
-        let url = "http://localhost:8085/api/metadata/user/search";
+        let url =  `${import.meta.env.VITE_PUBLIC_SEARCH_SERVICE}/api/metadata/user/search`;
         let params = {};
 
         // If a query is provided, use the search endpoint
         if (query.trim() !== '') {
-          url = "http://localhost:8085/api/metadata/search";
+          url =  `${import.meta.env.VITE_PUBLIC_SEARCH_SERVICE}/api/metadata/search`;
           params = { query: query };
         }
 
@@ -520,12 +516,12 @@ fetchRecycledFiles: async (query = '') => {
     set({ isLoading: true });
     try {
       const { token } = useAuthStore.getState();
-      let url = "http://localhost:8085/api/metadata/user/trash";
+      let url = `${import.meta.env.VITE_PUBLIC_SEARCH_SERVICE}/api/metadata/user/trash`;
       let params = {};
 
       // If a query is provided, use the search endpoint
       if (query.trim() !== '') {
-        url = "http://localhost:8085/api/metadata/search/trash";
+        url = `${import.meta.env.VITE_PUBLIC_SEARCH_SERVICE}/api/metadata/search/trash`;
         params = { query: query };
       }
 

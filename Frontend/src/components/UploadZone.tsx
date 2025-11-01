@@ -84,7 +84,7 @@ export function UploadZone() {
 
       try {
         const response = await axios.post<ProcessedDocument>(
-          'http://localhost:8083/api/genai/process',
+          `${import.meta.env.VITE_PUBLIC_UPLOAD_SERVICE}/api/genai/process`,
           formData,
           {
             headers: {

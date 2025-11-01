@@ -2,7 +2,7 @@ import React from "react";
 
 const Login: React.FC = () => {
   const loginWithGoogle = () => {
-    window.open("http://lg2-1375847449.us-east-1.elb.amazonaws.com/api/auth/login/google", "_self");
+    window.open(`${import.meta.env.VITE_PUBLIC_AUTH_SERVICE}/api/auth/login/google`, "_self");
   };
 
   return (
