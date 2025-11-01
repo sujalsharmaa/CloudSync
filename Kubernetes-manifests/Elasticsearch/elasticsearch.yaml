@@ -44,9 +44,7 @@ kind: StatefulSet
 metadata:
   name: elasticsearch
 spec:
-  securityContext:
-    runAsUser: 1000
-    fsGroup: 1000
+
   serviceName: elasticsearch-headless
   replicas: 1
   selector:
@@ -57,6 +55,9 @@ spec:
       labels:
         app: elasticsearch
     spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
       # NOTE: vm.max_map_count must be set on the host; a privileged init can work only if your cluster permits it.
       initContainers:
         - name: set-vm-max-map-count
