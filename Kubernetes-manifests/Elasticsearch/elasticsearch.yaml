@@ -10,17 +10,6 @@ data:
     http.host: 0.0.0.0
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cloudsync-pvc
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources:
-    requests:
-      storage: 10Gi
-  # optional: storageClassName: standard
----
-apiVersion: v1
 kind: Service
 metadata:
   name: elasticsearch
