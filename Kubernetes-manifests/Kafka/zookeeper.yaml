@@ -41,23 +41,9 @@ spec:
             - name: ZOOKEEPER_TICK_TIME
               value: "2000"
           volumeMounts:
-            - name: zookeeper-data
-              mountPath: /var/lib/zookeeper/data
-            - name: zookeeper-log
-              mountPath: /var/lib/zookeeper/log
-  # This creates the Persistent Volumes for Zookeeper data
-  # volumeClaimTemplates:
-  #   - metadata:
-  #       name: zookeeper-data
-  #     spec:
-  #       accessModes: [ "ReadWriteOnce" ]
-  #       resources:
-  #         requests:
-  #           storage: 5Gi
-  #   - metadata:
-  #       name: zookeeper-log
-  #     spec:
-  #       accessModes: [ "ReadWriteOnce" ]
-  #       resources:
-  #         requests:
-  #           storage: 5Gi
+            - name: cloudsync-pv1
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv1
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc1
