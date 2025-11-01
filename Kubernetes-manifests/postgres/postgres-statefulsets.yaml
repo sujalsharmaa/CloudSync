@@ -29,10 +29,10 @@ spec:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
-      #     volumeMounts:
-      #       - name: postgres-pv
-      #         mountPath: /data/db
-      # volumes:
-      #   - name: postgres-pv
-      #     persistentVolumeClaim:
-      #       claimName: postgres-pvc                  
+          volumeMounts:
+            - name: cloudsync-pv
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc                  

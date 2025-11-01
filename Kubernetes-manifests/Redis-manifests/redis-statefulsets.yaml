@@ -18,10 +18,10 @@ spec:
           image: redis/redis-stack-server
           ports:
             - containerPort: 6379
-      #     volumeMounts:
-      #       - name: redis-pv
-      #         mountPath: /data/db
-      # volumes:
-      #   - name: redis-pv
-      #     persistentVolumeClaim:
-      #       claimName: redis-pvc
+          volumeMounts:
+            - name: cloudsync-pv
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc

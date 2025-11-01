@@ -46,23 +46,9 @@ spec:
           - name: ZOOKEEPER_SERVERS
             value: "zookeeper-0.zookeeper-svc.default.svc.cluster.local:2888:3888"
         volumeMounts:
-        - name: zookeeper-data
-          mountPath: /var/lib/zookeeper/data
-        - name: zookeeper-log
-          mountPath: /var/lib/zookeeper/log
-  # This will create a PersistentVolume for the Zookeeper data
-  volumeClaimTemplates:
-  - metadata:
-      name: zookeeper-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 5Gi
-  - metadata:
-      name: zookeeper-log
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 5Gi
+        - name: cloudsync-pv
+          mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc

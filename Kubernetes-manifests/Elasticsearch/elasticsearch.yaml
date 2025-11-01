@@ -96,15 +96,10 @@ spec:
           # Load all key-value pairs from the ConfigMap as env vars
           - configMapRef:
               name: elasticsearch-config
-  #       volumeMounts:
-  #       - name: es-data
-  #         mountPath: /usr/share/elasticsearch/data
-  # # Create a persistent volume for the Elasticsearch data
-  # volumeClaimTemplates:
-  # - metadata:
-  #     name: es-data
-  #   spec:
-  #     accessModes: [ "ReadWriteOnce" ]
-  #     resources:
-  #       requests:
-  #         storage: 10Gi
+        volumeMounts:
+          - name: cloudsync-pv
+            mountPath: /data/db
+    volumes:
+      - name: cloudsync-pv
+        persistentVolumeClaim:
+          claimName: cloudsync-pvc
