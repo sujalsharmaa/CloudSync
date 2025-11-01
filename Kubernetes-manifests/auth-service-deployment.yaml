@@ -8,12 +8,10 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"  # Matches the PVC
+  storageClassName: "standard"
   hostPath:
-    path: /data/db
-
+    path: /mnt/my-data/db   # <-- THIS IS THE FIX
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -21,13 +19,11 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"  # Matches the PV
+  storageClassName: "standard"
   resources:
     requests:
       storage: 1Gi
-
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -53,9 +49,9 @@ spec:
             - secretRef:
                 name: auth-service-secret
           volumeMounts:
-            - name: cloudsync-storage  # This name must match the 'volumes' name below
+            - name: cloudsync-storage
               mountPath: /data/db
       volumes:
-        - name: cloudsync-storage  # This name must match 'volumeMounts' above
+        - name: cloudsync-storage
           persistentVolumeClaim:
-            claimName: cloudsync-pvc # This correctly requests your PVC
+            claimName: cloudsync-pvc
