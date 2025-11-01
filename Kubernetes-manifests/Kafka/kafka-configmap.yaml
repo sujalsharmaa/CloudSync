@@ -68,15 +68,16 @@ spec:
           # Load all key-value pairs from the ConfigMap as environment variables
           - configMapRef:
               name: kafka-config
-  #       volumeMounts:
-  #       - name: kafka-data
-  #         mountPath: /var/lib/kafka/data
+  #       volumeMounts:
+  #       - name: kafka-data
+  #         mountPath: /var/lib/kafka/data
   # # Create a persistent volume for the Kafka broker's data
   # volumeClaimTemplates:
   # - metadata:
-  #     name: kafka-data
-  #   spec:
-  #     accessModes: [ "ReadWriteOnce" ]
-  #     resources:
-  #       requests:
-  #         storage: 10Gi
+  #     name: kafka-data
+  #   spec:
+  #     accessModes: [ "ReadWriteOnce" ]
+  #     resources:
+  #       requests:
+  #         storage: 10Gi
+
