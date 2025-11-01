@@ -25,3 +25,125 @@ spec:
   resources:
     requests:
       storage: 1Gi
+
+# --------------------------------------------------      
+
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: cloudsync-pv1
+
+# spec:
+#   capacity: 
+#     storage: 1Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteMany
+#   hostPath:
+#     path: /data/db
+
+# ---
+
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: cloudsync-pvc1
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   storageClassName: "standard" 
+#   resources:
+#     requests:
+#       storage: 1Gi
+
+# # --------------------------------------------------      
+
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: cloudsync-pv
+
+# spec:
+#   capacity: 
+#     storage: 1Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteMany
+#   hostPath:
+#     path: /data/db
+
+# ---
+
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: cloudsync-pvc
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   storageClassName: "standard" 
+#   resources:
+#     requests:
+#       storage: 1Gi
+
+# # --------------------------------------------------      
+
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: cloudsync-pv
+
+# spec:
+#   capacity: 
+#     storage: 1Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteMany
+#   hostPath:
+#     path: /data/db
+
+# ---
+
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: cloudsync-pvc
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   storageClassName: "standard" 
+#   resources:
+#     requests:
+#       storage: 1Gi
+
+# # --------------------------------------------------      
+
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: cloudsync-pv
+
+# spec:
+#   capacity: 
+#     storage: 1Gi
+#   volumeMode: Filesystem
+#   accessModes:
+#     - ReadWriteMany
+#   hostPath:
+#     path: /data/db
+
+# ---
+
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: cloudsync-pvc
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   storageClassName: "standard" 
+#   resources:
+#     requests:
+#       storage: 1Gi
+
+# --------------------------------------------------      

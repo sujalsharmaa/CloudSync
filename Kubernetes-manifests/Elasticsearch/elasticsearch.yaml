@@ -97,24 +97,10 @@ spec:
           - configMapRef:
               name: elasticsearch-config
         volumeMounts:
-        # --- UPDATED SECTION ---
-        # 1. Mount a new volume named "es-data"
-        # 2. Point it to the correct path: /usr/share/elasticsearch/data
-        - name: es-data
-          mountPath: /usr/share/elasticsearch/data
-        # --- END OF UPDATE ---
-
-  # --- UPDATED SECTION ---
-  # Use volumeClaimTemplates to automatically create a new, dedicated
-  # PersistentVolumeClaim for Elasticsearch.
-  volumeClaimTemplates:
-  - metadata:
-      name: es-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard" # Or your specific storage class
-      resources:
-        requests:
-          storage: 10Gi
-  # --- END OF UPDATE ---
+          - name: cloudsync-pv
+            mountPath: /data/db
+    volumes:
+      - name: cloudsync-pv
+        persistentVolumeClaim:
+          claimName: cloudsync-pvc
 
