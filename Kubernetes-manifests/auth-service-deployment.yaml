@@ -1,3 +1,33 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cloudsync-pv
+spec:
+  capacity: 
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "standard"  # Matches the PVC
+  hostPath:
+    path: /data/db
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cloudsync-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "standard"  # Matches the PV
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,9 +53,9 @@ spec:
             - secretRef:
                 name: auth-service-secret
           volumeMounts:
-            - name: cloudsync-pv
+            - name: cloudsync-storage  # This name must match the 'volumes' name below
               mountPath: /data/db
       volumes:
-        - name: cloudsync-pv
+        - name: cloudsync-storage  # This name must match 'volumeMounts' above
           persistentVolumeClaim:
-            claimName: cloudsync-pvc
+            claimName: cloudsync-pvc # This correctly requests your PVC
