@@ -24,3 +24,10 @@ spec:
           env:        
             - name: ES_JAVA_OPTS
               value: "-Xms512m -Xmx512m"
+          volumeMounts:
+            - name: cloudsync-pv3
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv3
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc3
