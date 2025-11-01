@@ -1,0 +1,26 @@
+# Single pod, persistence on
+master:
+  replicas: 1
+
+data:
+  replicas: 0
+
+coordinating:
+  replicas: 0
+
+ingest:
+  enabled: false
+
+persistence:
+  enabled: true
+  size: 10Gi
+  # storageClass: standard   # uncomment if you want a specific class
+
+# Keep it simple for local/dev
+security:
+  enabled: false
+
+# Small JVM
+extraEnvVars:
+  - name: ES_JAVA_OPTS
+    value: "-Xms512m -Xmx512m"
