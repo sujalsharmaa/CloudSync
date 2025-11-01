@@ -1,51 +1,170 @@
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: elasticsearch-config
+# data:
+#   elasticsearch.yml: |
+#     cluster.name: my-es-cluster
+#     discovery.type: single-node
+#     xpack.security.enabled: false
+#     http.host: 0.0.0.0
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: elasticsearch
+#   labels:
+#     app: elasticsearch
+# spec:
+#   selector:
+#     app: elasticsearch
+#   ports:
+#     - name: http
+#       port: 9200
+#       targetPort: 9200
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: elasticsearch-headless
+#   labels:
+#     app: elasticsearch
+# spec:
+#   clusterIP: None
+#   selector:
+#     app: elasticsearch
+#   ports:
+#     - name: http
+#       port: 9200
+#     - name: transport
+#       port: 9300
+# ---
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: elasticsearch
+# spec:
+
+#   serviceName: elasticsearch-headless
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: elasticsearch
+#   template:
+#     metadata:
+#       labels:
+#         app: elasticsearch
+#     spec:
+#       securityContext:
+#         runAsUser: 1000
+#         fsGroup: 1000
+#       # NOTE: vm.max_map_count must be set on the host; a privileged init can work only if your cluster permits it.
+#       initContainers:
+#         - name: set-vm-max-map-count
+#           image: busybox:1.36
+#           command: ["sh", "-c", "sysctl -w vm.max_map_count=262144"]
+#           securityContext:
+#             privileged: true
+#       containers:
+#         - name: elasticsearch
+#           image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+#           ports:
+#             - name: http
+#               containerPort: 9200
+#             - name: transport
+#               containerPort: 9300
+#           env:
+#             - name: ES_JAVA_OPTS
+#               value: "-Xms512m -Xmx512m"
+#           volumeMounts:
+#             - name: es-config
+#               mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+#               subPath: elasticsearch.yml
+#             - name: cloudsync-pvc
+#               mountPath: /usr/share/elasticsearch/data
+#       volumes:
+#         - name: es-config
+#           configMap:
+#             name: elasticsearch-config
+#         - name: cloudsync-pvc
+#           persistentVolumeClaim:
+#             claimName: cloudsync-pvc
+
+
+# ============================================================================
+# 1. NAMESPACE
+# ============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: elasticsearch
+  labels:
+    name: elasticsearch
+
+---
+# ============================================================================
+# 2. PERSISTENT VOLUME CLAIM
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-pvc
+  namespace: elasticsearch
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard  # Change based on your cluster (gp2 for AWS, standard for GKE)
+
+---
+# ============================================================================
+# 3. CONFIGMAP - Elasticsearch Configuration
+# ============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: elasticsearch-config
+  namespace: elasticsearch
 data:
   elasticsearch.yml: |
-    cluster.name: my-es-cluster
+    cluster.name: "cloudsync-cluster"
+    network.host: 0.0.0.0
     discovery.type: single-node
-    xpack.security.enabled: false
-    http.host: 0.0.0.0
+    xpack.security.enabled: true
+    xpack.security.enrollment.enabled: true
+    xpack.security.transport.ssl.enabled: false
+    xpack.security.http.ssl.enabled: false
+
 ---
+# ============================================================================
+# 4. SECRET - Elasticsearch Credentials
+# ============================================================================
 apiVersion: v1
-kind: Service
+kind: Secret
 metadata:
-  name: elasticsearch
-  labels:
-    app: elasticsearch
-spec:
-  selector:
-    app: elasticsearch
-  ports:
-    - name: http
-      port: 9200
-      targetPort: 9200
+  name: elasticsearch-credentials
+  namespace: elasticsearch
+type: Opaque
+stringData:
+  username: elastic
+  password: changeme  # CHANGE THIS IN PRODUCTION!
+  ELASTIC_PASSWORD: changeme  # CHANGE THIS IN PRODUCTION!
+
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: elasticsearch-headless
-  labels:
-    app: elasticsearch
-spec:
-  clusterIP: None
-  selector:
-    app: elasticsearch
-  ports:
-    - name: http
-      port: 9200
-    - name: transport
-      port: 9300
----
+# ============================================================================
+# 5. STATEFULSET - Elasticsearch
+# ============================================================================
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: elasticsearch
+  namespace: elasticsearch
+  labels:
+    app: elasticsearch
 spec:
-
-  serviceName: elasticsearch-headless
+  serviceName: elasticsearch
   replicas: 1
   selector:
     matchLabels:
@@ -55,37 +174,156 @@ spec:
       labels:
         app: elasticsearch
     spec:
-      securityContext:
-        runAsUser: 1000
-        fsGroup: 1000
-      # NOTE: vm.max_map_count must be set on the host; a privileged init can work only if your cluster permits it.
       initContainers:
-        - name: set-vm-max-map-count
-          image: busybox:1.36
-          command: ["sh", "-c", "sysctl -w vm.max_map_count=262144"]
-          securityContext:
-            privileged: true
+      # Increase vm.max_map_count for Elasticsearch
+      - name: increase-vm-max-map
+        image: busybox:1.35
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      
+      # Set proper permissions on data directory
+      - name: fix-permissions
+        image: busybox:1.35
+        command: ["sh", "-c", "chown -R 1000:1000 /usr/share/elasticsearch/data"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      
       containers:
-        - name: elasticsearch
-          image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-          ports:
-            - name: http
-              containerPort: 9200
-            - name: transport
-              containerPort: 9300
-          env:
-            - name: ES_JAVA_OPTS
-              value: "-Xms512m -Xmx512m"
-          volumeMounts:
-            - name: es-config
-              mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
-              subPath: elasticsearch.yml
-            - name: cloudsync-pvc
-              mountPath: /usr/share/elasticsearch/data
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+        ports:
+        - containerPort: 9200
+          name: http
+          protocol: TCP
+        - containerPort: 9300
+          name: transport
+          protocol: TCP
+        
+        env:
+        - name: cluster.name
+          value: "cloudsync-cluster"
+        - name: node.name
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: discovery.type
+          value: "single-node"
+        - name: ELASTIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-credentials
+              key: ELASTIC_PASSWORD
+        - name: xpack.security.enabled
+          value: "true"
+        - name: xpack.security.enrollment.enabled
+          value: "true"
+        - name: xpack.security.transport.ssl.enabled
+          value: "false"
+        - name: xpack.security.http.ssl.enabled
+          value: "false"
+        - name: ES_JAVA_OPTS
+          value: "-Xms1g -Xmx1g"
+        
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+        - name: config
+          mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          subPath: elasticsearch.yml
+        
+        livenessProbe:
+          httpGet:
+            path: /_cluster/health
+            port: 9200
+            httpHeaders:
+            - name: Authorization
+              value: Basic ZWxhc3RpYzpjaGFuZ2VtZQ==  # base64(elastic:changeme)
+          initialDelaySeconds: 90
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /_cluster/health?wait_for_status=yellow&timeout=5s
+            port: 9200
+            httpHeaders:
+            - name: Authorization
+              value: Basic ZWxhc3RpYzpjaGFuZ2VtZQ==
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      
       volumes:
-        - name: es-config
-          configMap:
-            name: elasticsearch-config
-        - name: cloudsync-pvc
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+      - name: config
+        configMap:
+          name: elasticsearch-config
+  
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: standard  # Change based on your cluster
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+# ============================================================================
+# 6. SERVICE - Elasticsearch Internal
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  type: ClusterIP
+  ports:
+  - port: 9200
+    targetPort: 9200
+    name: http
+  - port: 9300
+    targetPort: 9300
+    name: transport
+  selector:
+    app: elasticsearch
+
+---
+# ============================================================================
+# 7. SERVICE - Elasticsearch External (LoadBalancer)
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-external
+  namespace: elasticsearch
+  labels:
+    app: elasticsearch
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 9200
+    targetPort: 9200
+    name: http
+    protocol: TCP
+  selector:
+    app: elasticsearch
+
+---
