@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-elasticsearch
+  serviceName: "backend-elasticsearch-service" # Required for StatefulSets
+  template:
+    metadata:
+      labels:
+        app: backend-elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+          ports:
+            - containerPort: 9200
+              name: http
+            - containerPort: 9300
+              name: transport
+          env:        
+            - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
