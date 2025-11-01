@@ -93,6 +93,6 @@ spec:
         - name: es-config
           configMap:
             name: elasticsearch-config
-        - name: cloudsync-pv
+        - name: cloudsync-pv1
           persistentVolumeClaim:
             claimName: cloudsync-pvc1
