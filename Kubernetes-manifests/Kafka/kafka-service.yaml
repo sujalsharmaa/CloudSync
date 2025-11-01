@@ -29,6 +29,9 @@ spec:
       labels:
         app: zookeeper
     spec:
+      securityContext:
+          runAsUser: 1000
+          fsGroup: 1000
       containers:
       - name: zookeeper
         image: confluentinc/cp-zookeeper:7.0.1
