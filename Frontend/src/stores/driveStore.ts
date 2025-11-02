@@ -593,7 +593,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     try {
-      const res = await axios.get<User>('http://mylb-627534277.us-east-1.elb.amazonaws.com/api/auth/user', {
+      const res = await axios.get<User>(`${import.meta.env.VITE_PUBLIC_AUTH_SERVICE}/api/auth/user`, {
         headers: {
           Authorization: `Bearer ${currentToken}`
         }
