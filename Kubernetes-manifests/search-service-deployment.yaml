@@ -16,7 +16,7 @@ spec:
         - name: cloudsync-search-service-container
           image: sujalsharma/search-service:latest
           ports:
-            - containerPort: 8084
+            - containerPort: 8085
           env:
             # THIS IS THE FIX:
             # Tell Spring Boot where to find the config file.

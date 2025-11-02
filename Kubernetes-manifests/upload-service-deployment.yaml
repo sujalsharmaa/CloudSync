@@ -1,22 +1,22 @@
 ags-generationapiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: search-service-deployment
+  name: upload-service-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: cloudsync-search-service
+      app: cloudsync-upload-service
   template:
     metadata:
       labels:
-        app: cloudsync-search-service
+        app: cloudsync-upload-service
     spec:
       containers:
-        - name: cloudsync-search-service-container
-          image: sujalsharma/search-service:latest
+        - name: cloudsync-upload-service-container
+          image: sujalsharma/upload-service:latest
           ports:
-            - containerPort: 8084
+            - containerPort: 8083
           env:
             # THIS IS THE FIX:
             # Tell Spring Boot where to find the config file.
@@ -26,7 +26,7 @@ spec:
           envFrom:
             # This loads your database password, JWT secret, etc.
             - secretRef:
-                name: search-service-secret
+                name: upload-service-secret
           
           volumeMounts:
             # Mount the config file to the path we specified above
@@ -38,7 +38,7 @@ spec:
         # Define the volume from the ConfigMap
         - name: config-volume
           configMap:
-            name: search-service-config
+            name: upload-service-config
             items:
               - key: application.yaml
                 path: application.yaml

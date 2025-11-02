@@ -16,7 +16,7 @@ spec:
         - name: cloudsync-tags-generation-service-container
           image: sujalsharma/tags-generation-service:latest
           ports:
-            - containerPort: 8084
+            - containerPort: 8082
           env:
             # THIS IS THE FIX:
             # Tell Spring Boot where to find the config file.
