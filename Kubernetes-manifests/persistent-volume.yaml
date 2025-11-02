@@ -9,7 +9,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"
+  storageClassName: "default"
   hostPath:
     path: /data/db
 
@@ -22,7 +22,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard" 
+  storageClassName: "default" 
   resources:
     requests:
       storage: 1Gi
@@ -40,7 +40,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"    
+  storageClassName: "default"    
   hostPath:
     path: /data/db
 
@@ -53,7 +53,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default" 
   resources:
     requests:
       storage: 1Gi
@@ -71,7 +71,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"    
+  storageClassName: "default"    
   hostPath:
     path: /data/db
 
@@ -84,7 +84,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default" 
   resources:
     requests:
       storage: 1Gi
@@ -102,7 +102,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"    
+  storageClassName: "default"    
   hostPath:
     path: /data/db
 
@@ -115,7 +115,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default" 
   resources:
     requests:
       storage: 1Gi
@@ -133,7 +133,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"    
+  storageClassName: "default"    
   hostPath:
     path: /data/db
 
@@ -146,7 +146,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default" 
   resources:
     requests:
       storage: 1Gi
