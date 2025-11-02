@@ -21,7 +21,7 @@ export const MetadataDiscoveryCard = React.memo(function MetadataDiscoveryCard({
     const [metadata, setMetadata] = useState<MetadataResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const API_URL = 'http://localhost:8085/api/metadata/user/tagsAndCategories';
+    const API_URL = `${import.meta.env.VITE_PUBLIC_SEARCH_SERVICE}/api/metadata/user/tagsAndCategories`;
     const token = localStorage.getItem("auth_token") || null; 
 
     // Helper function to get a random sample of N items (stable due to empty dependency array)

@@ -159,7 +159,7 @@ export const useDriveStore = create<DriveState & DriveActions>((set, get) => ({
   fetchUserStoragePlanAndConsumption: async()=>{
     try {
             const { token } = useAuthStore.getState();
-      const res = await axios.get('https://d8px74aqahhhe.cloudfront.net/api/auth/getStoragePlanAndConsumption', {
+      const res = await axios.get(`${import.meta.env.VITE_PUBLIC_AUTH_SERVICE}/api/auth/getStoragePlanAndConsumption`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log(res.data)
