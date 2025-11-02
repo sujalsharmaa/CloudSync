@@ -24,9 +24,9 @@ spec:
             - secretRef:
                 name: auth-service-secret
           volumeMounts:
-            - name: cloudsync-pv
+            - name: cloudsync-pv1
               mountPath: /data/db
       volumes:
-        - name: cloudsync-pv
+        - name: cloudsync-pv1
           persistentVolumeClaim:
-            claimName: cloudsync-pvc
+            claimName: cloudsync-pvc1
