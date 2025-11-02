@@ -26,7 +26,7 @@ spec:
           envFrom:
             # This loads your database password, JWT secret, etc.
             - secretRef:
-                name: upload-service-secret
+                name: file-service-secret
           
           volumeMounts:
             # Mount the config file to the path we specified above
