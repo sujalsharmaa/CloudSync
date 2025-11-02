@@ -17,7 +17,7 @@ data:
         # Username and password will be injected from a Secret
       kafka:
         # UPDATED to use the internal Kafka service name
-        bootstrap-servers: kafka-svc.default.svc.cluster.local:9092
+        bootstrap-servers: kafka-service.default.svc.cluster.local:9092
         producer:
           key-serializer: org.apache.kafka.common.serialization.StringSerializer
           value-serializer: org.apache.kafka.common.serialization.StringSerializer

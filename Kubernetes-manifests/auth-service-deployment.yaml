@@ -33,10 +33,6 @@ spec:
             - name: config-volume
               mountPath: /config/application.yaml
               subPath: application.yaml
-            
-            # This is your existing persistent volume
-            - name: cloudsync-pv1
-              mountPath: /data/db
               
       volumes:
         # Define the volume from the ConfigMap
@@ -47,7 +43,3 @@ spec:
               - key: application.yaml
                 path: application.yaml
                 
-        # Define the volume from the PVC
-        - name: cloudsync-pv1
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc1
