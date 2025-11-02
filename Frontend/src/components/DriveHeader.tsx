@@ -166,7 +166,7 @@ export function DriveHeader() {
         </DropdownMenu>
 
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <Settings className="w-4 h-4" />
+          {/* <Settings className="w-4 h-4" /> */}
         </Button>
         <UserStatus/>
       </div>
