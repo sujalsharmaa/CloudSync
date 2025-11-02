@@ -38,7 +38,7 @@ spec:
         # Define the volume from the ConfigMap
         - name: config-volume
           configMap:
-            name: upload-service-configmap
+            name: file-service-config
             items:
               - key: application.yaml
                 path: application.yaml
