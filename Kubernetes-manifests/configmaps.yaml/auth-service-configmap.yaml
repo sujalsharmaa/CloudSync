@@ -38,7 +38,7 @@ data:
             registration:
               google:
                 # Client ID and Secret will be injected from a Secret
-                redirect-uri: "https://drive.sujalsharma.in/login/oauth2/code/google"
+                redirect-uri: "https://auth.sujalsharma.in/login/oauth2/code/google"
                 scope:
                   - openid
                   - profile
