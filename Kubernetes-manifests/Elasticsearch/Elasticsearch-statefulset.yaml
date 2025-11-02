@@ -7,7 +7,7 @@ spec:
   selector:
     matchLabels:
       app: backend-elasticsearch
-  serviceName: "backend-elasticsearch-service" # Required for StatefulSets
+  serviceName: "elasticsearch"  # Must match Service name
   template:
     metadata:
       labels:
@@ -21,12 +21,18 @@ spec:
               name: http
             - containerPort: 9300
               name: transport
-          env:        
+          env:
+            - name: discovery.type
+              value: "single-node"
             - name: ES_JAVA_OPTS
               value: "-Xms512m -Xmx512m"
+            - name: xpack.security.enabled
+              value: "false"  # Disable security for development
+            - name: xpack.security.enrollment.enabled
+              value: "false"
           volumeMounts:
             - name: cloudsync-pv3
-              mountPath: /data/db
+              mountPath: /usr/share/elasticsearch/data  # Correct path
       volumes:
         - name: cloudsync-pv3
           persistentVolumeClaim:
