@@ -1,29 +1,4 @@
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: cloudsync-pv
-spec:
-  capacity: 
-    storage: 1Gi
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteMany
-  storageClassName: "standard"
-  hostPath:
-    path: /mnt/my-data/db   # <-- THIS IS THE FIX
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cloudsync-pvc
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: "standard"
-  resources:
-    requests:
-      storage: 1Gi
----
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -49,9 +24,9 @@ spec:
             - secretRef:
                 name: auth-service-secret
           volumeMounts:
-            - name: cloudsync-storage
+            - name: cloudsync-pv
               mountPath: /data/db
       volumes:
-        - name: cloudsync-storage
+        - name: cloudsync-pv
           persistentVolumeClaim:
             claimName: cloudsync-pvc
