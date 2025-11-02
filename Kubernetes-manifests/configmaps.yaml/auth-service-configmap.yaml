@@ -51,4 +51,4 @@ data:
         # JWT Secret will be injected from a Secret
         expiration: 86400000 # 24 hours
       frontend:
-        url: https://drive.sujalsharma.in/home
+        url: https://drive.sujalsharma.in
