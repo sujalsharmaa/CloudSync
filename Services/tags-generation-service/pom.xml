@@ -178,7 +178,7 @@
             <artifactId>spring-boot-maven-plugin</artifactId>
             <configuration>
                 
-                <mainClass>com.tags_generation_service.tags_generation_service.TagsGenerationServiceApplication</mainClass>
+                <!-- <mainClass>com.tags_generation_service.tags_generation_service.TagsGenerationServiceApplication</mainClass> -->
                 
                 <excludes>
                     <exclude>
