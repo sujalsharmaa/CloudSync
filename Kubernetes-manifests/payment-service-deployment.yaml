@@ -17,15 +17,29 @@ spec:
           image: sujalsharma/payment-service:latest
           ports:
             - containerPort: 8084
+          env:
+            # THIS IS THE FIX:
+            # Tell Spring Boot where to find the config file.
+            - name: SPRING_CONFIG_LOCATION
+              value: "file:/config/application.yaml" 
+          
           envFrom:
-            - configMapRef:
-                name: payment-service-config
+            # This loads your database password, JWT secret, etc.
             - secretRef:
                 name: payment-service-secret
+          
           volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
+            # Mount the config file to the path we specified above
+            - name: config-volume
+              mountPath: /config/application.yaml
+              subPath: application.yaml
+              
       volumes:
-        - name: cloudsync-pv
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+        # Define the volume from the ConfigMap
+        - name: config-volume
+          configMap:
+            name: payment-service-config
+            items:
+              - key: application.yaml
+                path: application.yaml
+                

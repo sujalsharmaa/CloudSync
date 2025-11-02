@@ -16,16 +16,30 @@ spec:
         - name: cloudsync-tags-generation-service-container
           image: sujalsharma/tags-generation-service:latest
           ports:
-            - containerPort: 8082
+            - containerPort: 8084
+          env:
+            # THIS IS THE FIX:
+            # Tell Spring Boot where to find the config file.
+            - name: SPRING_CONFIG_LOCATION
+              value: "file:/config/application.yaml" 
+          
           envFrom:
-            - configMapRef:
-                name: tags-generation-service-config
+            # This loads your database password, JWT secret, etc.
             - secretRef:
                 name: tags-generation-service-secret
+          
           volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
+            # Mount the config file to the path we specified above
+            - name: config-volume
+              mountPath: /config/application.yaml
+              subPath: application.yaml
+              
       volumes:
-        - name: cloudsync-pv
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+        # Define the volume from the ConfigMap
+        - name: config-volume
+          configMap:
+            name: tags-generation-service-config
+            items:
+              - key: application.yaml
+                path: application.yaml
+                

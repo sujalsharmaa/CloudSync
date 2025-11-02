@@ -1,36 +1,3 @@
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: notification-service-deployment
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: cloudsync-notification-service
-#   template:
-#     metadata:
-#       labels:
-#         app: cloudsync-notification-service
-#     spec:
-#       containers:
-#         - name: cloudsync-notification-service-container
-#           image: sujalsharma/notification-service:latest
-#           ports:
-#             - containerPort: 8086
-#           envFrom:
-#             - configMapRef:
-#                 name: notification-service-config
-#             - secretRef:
-#                 name: notification-service-secret
-#           volumeMounts:
-#             - name: cloudsync-pv
-#               mountPath: /data/db
-#       volumes:
-#         - name: cloudsync-pv
-#           persistentVolumeClaim:
-#             claimName: cloudsync-pvc
-
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:

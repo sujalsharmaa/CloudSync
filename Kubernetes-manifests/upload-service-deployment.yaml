@@ -1,31 +1,45 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: upload-service-deployment
+  name: search-service-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: cloudsync-upload-service
+      app: cloudsync-search-service
   template:
     metadata:
       labels:
-        app: cloudsync-upload-service
+        app: cloudsync-search-service
     spec:
       containers:
-        - name: cloudsync-upload-service-container
-          image: sujalsharma/upload-download-rag-pipelin:latest
+        - name: cloudsync-search-service-container
+          image: sujalsharma/search-service:latest
           ports:
-            - containerPort: 8083
+            - containerPort: 8084
+          env:
+            # THIS IS THE FIX:
+            # Tell Spring Boot where to find the config file.
+            - name: SPRING_CONFIG_LOCATION
+              value: "file:/config/application.yaml" 
+          
           envFrom:
-            - configMapRef:
-                name: file-service-config
+            # This loads your database password, JWT secret, etc.
             - secretRef:
-                name: file-service-secret
+                name: search-service-secret
+          
           volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
+            # Mount the config file to the path we specified above
+            - name: config-volume
+              mountPath: /config/application.yaml
+              subPath: application.yaml
+              
       volumes:
-        - name: cloudsync-pv
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc
+        # Define the volume from the ConfigMap
+        - name: config-volume
+          configMap:
+            name: search-service-config
+            items:
+              - key: application.yaml
+                path: application.yaml
+                
