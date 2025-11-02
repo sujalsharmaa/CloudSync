@@ -7,12 +7,19 @@ spec:
   selector:
     matchLabels:
       app: backend-elasticsearch
-  serviceName: "elasticsearch"  # Must match Service name
+  serviceName: "elasticsearch"
   template:
     metadata:
       labels:
         app: backend-elasticsearch
     spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ['sh', '-c', 'chown -R 1000:1000 /usr/share/elasticsearch/data']
+          volumeMounts:
+            - name: cloudsync-pv3
+              mountPath: /usr/share/elasticsearch/data
       containers:
         - name: elasticsearch
           image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
@@ -27,12 +34,14 @@ spec:
             - name: ES_JAVA_OPTS
               value: "-Xms512m -Xmx512m"
             - name: xpack.security.enabled
-              value: "false"  # Disable security for development
+              value: "false"
             - name: xpack.security.enrollment.enabled
               value: "false"
+            - name: cluster.name
+              value: "docker-cluster"
           volumeMounts:
             - name: cloudsync-pv3
-              mountPath: /usr/share/elasticsearch/data  # Correct path
+              mountPath: /usr/share/elasticsearch/data
       volumes:
         - name: cloudsync-pv3
           persistentVolumeClaim:
