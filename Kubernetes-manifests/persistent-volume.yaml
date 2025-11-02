@@ -15,17 +15,6 @@ spec:
 
 ---
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cloudsync-pvc
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: "default" 
-  resources:
-    requests:
-      storage: 1Gi
 
 # --------------------------------------------------      
 
@@ -44,19 +33,7 @@ spec:
   hostPath:
     path: /data/db
 
----
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cloudsync-pvc1
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: "default" 
-  resources:
-    requests:
-      storage: 1Gi
 
 # --------------------------------------------------      
 
@@ -75,19 +52,7 @@ spec:
   hostPath:
     path: /data/db
 
----
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cloudsync-pvc2
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: "default" 
-  resources:
-    requests:
-      storage: 1Gi
 
 # --------------------------------------------------      
 
@@ -106,19 +71,6 @@ spec:
   hostPath:
     path: /data/db
 
----
-
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cloudsync-pvc3
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: "default" 
-  resources:
-    requests:
-      storage: 1Gi
 
 # --------------------------------------------------      
 
@@ -137,18 +89,6 @@ spec:
   hostPath:
     path: /data/db
 
----
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cloudsync-pvc4
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: "default" 
-  resources:
-    requests:
-      storage: 1Gi
 
 # --------------------------------------------------      
