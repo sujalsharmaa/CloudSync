@@ -17,15 +17,21 @@ spec:
           image: sujalsharma/auth-service:latest
           ports:
             - containerPort: 8080
+          env:
+            # THIS IS THE FIX:
+            # Tell Spring Boot where to find the config file.
+            - name: SPRING_CONFIG_LOCATION
+              value: "file:/config/application.yaml" 
+          
           envFrom:
-            # THIS IS CORRECT: Load the secret keys as env vars
+            # This loads your database password, JWT secret, etc.
             - secretRef:
                 name: auth-service-secret
+          
           volumeMounts:
-            # THIS IS THE FIX: Mount the application.yaml file 
-            # from the ConfigMap into the container
+            # Mount the config file to the path we specified above
             - name: config-volume
-              mountPath: /workspace/config/application.yaml
+              mountPath: /config/application.yaml
               subPath: application.yaml
             
             # This is your existing persistent volume
@@ -33,7 +39,7 @@ spec:
               mountPath: /data/db
               
       volumes:
-        # THIS IS THE FIX: Define the volume using the ConfigMap
+        # Define the volume from the ConfigMap
         - name: config-volume
           configMap:
             name: auth-service-config
@@ -41,7 +47,7 @@ spec:
               - key: application.yaml
                 path: application.yaml
                 
-        # This is your existing persistent volume
+        # Define the volume from the PVC
         - name: cloudsync-pv1
           persistentVolumeClaim:
             claimName: cloudsync-pvc1
