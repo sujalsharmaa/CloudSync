@@ -1,4 +1,3 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,14 +18,30 @@ spec:
           ports:
             - containerPort: 8080
           envFrom:
-            - configMapRef:
-                name: auth-service-config
+            # THIS IS CORRECT: Load the secret keys as env vars
             - secretRef:
                 name: auth-service-secret
           volumeMounts:
+            # THIS IS THE FIX: Mount the application.yaml file 
+            # from the ConfigMap into the container
+            - name: config-volume
+              mountPath: /workspace/config/application.yaml
+              subPath: application.yaml
+            
+            # This is your existing persistent volume
             - name: cloudsync-pv1
               mountPath: /data/db
+              
       volumes:
+        # THIS IS THE FIX: Define the volume using the ConfigMap
+        - name: config-volume
+          configMap:
+            name: auth-service-config
+            items:
+              - key: application.yaml
+                path: application.yaml
+                
+        # This is your existing persistent volume
         - name: cloudsync-pv1
           persistentVolumeClaim:
             claimName: cloudsync-pvc1
