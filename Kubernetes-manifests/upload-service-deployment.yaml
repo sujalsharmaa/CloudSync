@@ -30,13 +30,13 @@ spec:
           
           volumeMounts:
             # Mount the config file to the path we specified above
-            - name: config-volume
+            - name: config-volume3
               mountPath: /config/application.yaml
               subPath: application.yaml
               
       volumes:
         # Define the volume from the ConfigMap
-        - name: config-volume
+        - name: config-volume3
           configMap:
             name: file-service-config
             items:
