@@ -1,40 +1,34 @@
+# Services/auth-service/Dockerfile
+
 # Stage 1: Build
 FROM maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /app
 
+# Copy pom.xml and download dependencies (cached layer)
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
+# Copy source code and build
 COPY src ./src
 RUN mvn clean package -DskipTests
-
-# DEBUG: List what was built
-RUN ls -lh target/
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Install wget
-RUN apk add --no-cache wget
-
-# Create user
+# Create non-root user
 RUN addgroup -S spring && adduser -S spring -G spring
-
-# FIX: Copy the CORRECT JAR explicitly
-COPY --from=build /app/target/tags-generation-service-0.0.1-SNAPSHOT.jar app.jar
-
-# Verify it was copied
-RUN ls -lh app.jar
-RUN unzip -p app.jar META-INF/MANIFEST.MF | head -20
-
-RUN chown spring:spring app.jar
-
 USER spring:spring
 
+# Copy jar from build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Expose port
 EXPOSE 8082
 
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1
 
+# Run application
 ENTRYPOINT ["java", "-jar", "app.jar"]
