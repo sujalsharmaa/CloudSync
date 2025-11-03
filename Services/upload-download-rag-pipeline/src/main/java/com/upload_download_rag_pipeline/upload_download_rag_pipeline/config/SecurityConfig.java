@@ -75,7 +75,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of("http://localhost:5173"
+        ,"https://drive.sujalsharma.in"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         // FIX: Temporarily use "*" for headers to rule out header mismatch issues.
         // If this works, try adding specific headers like 'Accept' and 'X-Requested-With'.

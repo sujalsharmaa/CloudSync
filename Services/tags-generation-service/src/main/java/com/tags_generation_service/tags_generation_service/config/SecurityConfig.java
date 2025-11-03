@@ -77,7 +77,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // explicit allowed origin (do not use '*' with allowCredentials=true)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173",
+                "https://drive.sujalsharma.in"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         // explicitly allow Authorization header for preflight
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
