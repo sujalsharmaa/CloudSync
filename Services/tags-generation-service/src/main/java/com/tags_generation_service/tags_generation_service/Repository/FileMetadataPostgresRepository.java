@@ -1,4 +1,3 @@
-// FileMetadataPostgresRepository.java
 package com.tags_generation_service.tags_generation_service.Repository;
 
 import com.tags_generation_service.tags_generation_service.Model.FileMetadataPostgres;
@@ -13,19 +12,28 @@ import java.util.UUID;
 
 @Repository
 public interface FileMetadataPostgresRepository extends JpaRepository<FileMetadataPostgres, UUID> {
+
     Optional<FileMetadataPostgres> findByS3Location(String s3Location);
+
     @Modifying
     @Query("UPDATE FileMetadataPostgres f SET f.thumbnailS3Location = :thumbnailUrl WHERE f.s3Location = :s3Location")
     int updateThumbnailUrlByS3Location(@Param("s3Location") String s3Location, @Param("thumbnailUrl") String thumbnailUrl);
 
-    // Use a native query with a database-specific function for case-insensitive search.
-    // This is for PostgreSQL's ILIKE operator.
-    @Query(value = "SELECT * FROM file_metadata WHERE tags LIKE %?1%", nativeQuery = true)
-    List<FileMetadataPostgres> findByTagsContaining(String tag);
-
-    @Query(value = "SELECT * FROM file_metadata WHERE categories LIKE %?1%", nativeQuery = true)
-    List<FileMetadataPostgres> findByCategoriesContaining(String category);
-
-    // This derived query method still works as it maps to a standard `LIKE`
     FileMetadataPostgres findByFileName(String fileName);
+
+    // --- NEW AND IMPROVED JSONB QUERIES ---
+
+    /**
+     * Finds files where the 'tags' jsonb array contains the specified tag.
+     * This uses the native Postgres '?' operator, which is highly efficient and indexed.
+     */
+    @Query(value = "SELECT * FROM file_metadata WHERE tags ? ?1", nativeQuery = true)
+    List<FileMetadataPostgres> findByTag(String tag);
+
+    /**
+     * Finds files where the 'categories' jsonb array contains the specified category.
+     * This uses the native Postgres '?' operator.
+     */
+    @Query(value = "SELECT * FROM file_metadata WHERE categories ? ?1", nativeQuery = true)
+    List<FileMetadataPostgres> findByCategory(String category);
 }
