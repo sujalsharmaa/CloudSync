@@ -145,7 +145,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <!-- Explicitly set the main class -->
-                    <mainClass>com.tags_generation_service.tags_generation_service.Application</mainClass>
+                    
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
