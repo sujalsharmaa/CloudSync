@@ -22,7 +22,8 @@ RUN apk add --no-cache wget
 RUN addgroup -S spring && adduser -S spring -G spring
 
 # FIX: Copy the CORRECT JAR explicitly
-COPY --from=build /app/target/tags-generation-service-0.0.1-SNAPSHOT.jar app.jar
+# FIX: Copy the CORRECT JAR explicitly
+COPY --from=build /app/target/tags-generation-service.jar app.jar
 
 # Verify it was copied
 RUN ls -lh app.jar
