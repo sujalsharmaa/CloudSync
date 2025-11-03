@@ -123,7 +123,7 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-maven-plugin</artifactId>
       <configuration>
-        <mainClass>com.tags_generation_service.tags_generation_service.Application</mainClass>
+        <mainClass>com.tags_generation_service.tags_generation_service.TagGenerationServiceApplication</mainClass>
         <excludes>
           <exclude>
             <groupId>org.projectlombok</groupId>
