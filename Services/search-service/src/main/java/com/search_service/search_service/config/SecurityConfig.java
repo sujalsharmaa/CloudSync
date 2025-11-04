@@ -30,7 +30,6 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthenticationConverter jwtAuthenticationConverter,
                                                    JwtDecoder jwtDecoder) throws Exception {
-        // Note: jwtDecoder is injected so Spring creates it, but we don't call a non-existent jwtDecoder(...) method on the DSL.
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -40,13 +39,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        // only configure the jwt converter here — the JwtDecoder bean is used automatically
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
                 );
 
         return http.build();
     }
-
 
     // HS256 JwtDecoder — secret must come from env/secret manager in prod
     @Bean
@@ -54,7 +51,6 @@ public class SecurityConfig {
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("app.jwt.secret must be set for HS256 verification");
         }
-        // recommend 256+ bits secret; here we create HMAC key from bytes
         SecretKey key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
     }
@@ -63,7 +59,6 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        // adjust to your tokens: "roles", "scope", etc.
         authoritiesConverter.setAuthoritiesClaimName("roles");
         authoritiesConverter.setAuthorityPrefix("ROLE_");
 
@@ -76,13 +71,36 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // explicit allowed origin (do not use '*' with allowCredentials=true)
-        configuration.setAllowedOrigins(List.of("http://localhost:5173",
-        "https://drive.sujalsharma.in"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        // explicitly allow Authorization header for preflight
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+
+        // Allow both localhost (development) and production domains
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",           // Local development
+                "https://drive.sujalsharma.in"     // Frontend origin
+        ));
+
+        // Allow all necessary HTTP methods
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+
+        // Allow necessary headers for CORS preflight
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With"
+        ));
+
+        // Expose any custom response headers if needed
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type"
+        ));
+
+        // Allow credentials (cookies, authorization headers)
         configuration.setAllowCredentials(true);
+
+        // Cache preflight requests for 1 hour
+        configuration.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
