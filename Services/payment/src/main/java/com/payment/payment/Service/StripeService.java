@@ -21,7 +21,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class StripeService {
 
-    @Value("${redirect_url_sucess}")
+    @Value("${redirect_url_success}")
     private String redirectURL;
 
 
