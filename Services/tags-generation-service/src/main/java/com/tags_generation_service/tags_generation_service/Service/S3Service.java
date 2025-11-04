@@ -6,6 +6,9 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -15,16 +18,25 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class S3Service {
-
     private final S3Client s3Client;
-    // NOTE: In a production app, the bucket name should be loaded via @Value or properties.
-    private final String bucketName = "your-rag-pipeline-bucket";
-    private final Region region = Region.US_EAST_1; // Using a variable for consistency
+    private final String bucketName;
 
-    public S3Service() {
+    public S3Service(
+            @Value("${aws.region}") String region,
+            @Value("${aws.credentials.access-key}") String accessKey,
+            @Value("${aws.credentials.secret-key}") String secretKey,
+            @Value("${aws.s3.bucket-name}") String bucketName
+    ) {
+        this.bucketName = bucketName;
+
+        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
+
         this.s3Client = S3Client.builder()
-                .region(region)
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .build();
+
+        log.info("S3Service initialized with bucket: {} in region: {}", bucketName, region);
     }
 
     public InputStream downloadFile(String s3Location) {
