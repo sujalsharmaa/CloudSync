@@ -9,7 +9,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"
+  storageClassName: "standard"
   hostPath:
     path: /data/db
 
@@ -29,7 +29,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"    
+  storageClassName: "standard"    
   hostPath:
     path: /data/db
 
@@ -48,7 +48,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"    
+  storageClassName: "standard"    
   hostPath:
     path: /data/db
 
@@ -67,7 +67,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"    
+  storageClassName: "standard"    
   hostPath:
     path: /data/db
 
@@ -85,7 +85,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"    
+  storageClassName: "standard"    
   hostPath:
     path: /data/db
 
