@@ -123,13 +123,9 @@ spec:
               cpu: "1"
               memory: "1Gi"
           volumeMounts:
-            - name: kafka-data
-              mountPath: /bitnami/kafka
-  volumeClaimTemplates:
-    - metadata:
-        name: kafka-data
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 10Gi
+            - name: cloudsync-pv2
+              mountPath: /data/db
+      volumes:
+        - name: cloudsync-pv2
+          persistentVolumeClaim:
+            claimName: cloudsync-pvc2
