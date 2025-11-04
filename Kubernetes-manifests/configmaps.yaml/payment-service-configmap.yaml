@@ -5,6 +5,7 @@ metadata:
 data:
   # Merged .properties and .yaml into one file
   application.yaml: |
+    redirect_url_sucess: https://drive.sujalsharma.in/
     server:
       port: 8084
       

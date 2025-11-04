@@ -21,8 +21,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class StripeService {
 
-    private static final Logger logger = LoggerFactory.getLogger(StripeService.class);
+    @Value("${redirect_url_sucess}")
+    private String redirectURL;
 
+
+    private static final Logger logger = LoggerFactory.getLogger(StripeService.class);
     private final PaymentRepository paymentRepository;
     private final QueueService queueService;
 
@@ -95,8 +98,8 @@ public class StripeService {
         SessionCreateParams params =
                 SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.PAYMENT)
-                        .setSuccessUrl("http://localhost:5173/paymentSuccess?session_id={CHECKOUT_SESSION_ID}")
-                        .setCancelUrl("http://localhost:5173/paymentFailure")
+                        .setSuccessUrl(redirectURL+ "paymentSuccess?session_id={CHECKOUT_SESSION_ID}")
+                        .setCancelUrl(redirectURL + "paymentFailure")
                         .addLineItem(lineItem)
                         .putMetadata("local_payment_id", String.valueOf(payment.getId()))
                         .putMetadata("user_id", jwt.getClaims().get("userId").toString())
