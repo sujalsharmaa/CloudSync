@@ -55,3 +55,4 @@ file.sujalsharma.in
 payment.sujalsharma.in
 search.sujalsharma.in
 
+# "default" for Azure "standard" for GCP and "standard" for AWS

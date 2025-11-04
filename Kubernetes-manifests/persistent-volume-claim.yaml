@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard" 
+  storageClassName: "default"
   resources:
     requests:
       storage: 1Gi
@@ -20,7 +20,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default"
   resources:
     requests:
       storage: 1Gi
@@ -34,10 +34,10 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default"
   resources:
     requests:
-      storage: 1Gi      
+      storage: 1Gi
 
 ---
 
@@ -48,10 +48,10 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default"
   resources:
     requests:
-      storage: 1Gi      
+      storage: 1Gi
 
 ---
 
@@ -62,7 +62,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default"
   resources:
     requests:
       storage: 1Gi
@@ -76,7 +76,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard" 
+  storageClassName: "default"
   resources:
     requests:
       storage: 1Gi

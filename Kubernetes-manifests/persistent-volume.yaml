@@ -9,14 +9,14 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"
+  storageClassName: "default"
   hostPath:
     path: /data/db
 
 ---
 
 
-# --------------------------------------------------      
+# --------------------------------------------------
 
 apiVersion: v1
 kind: PersistentVolume
@@ -24,18 +24,18 @@ metadata:
   name: cloudsync-pv1
 
 spec:
-  capacity: 
+  capacity:
     storage: 1Gi
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"    
+  storageClassName: "default"
   hostPath:
     path: /data/db
 
 
 
-# --------------------------------------------------      
+# --------------------------------------------------
 
 apiVersion: v1
 kind: PersistentVolume
@@ -43,18 +43,18 @@ metadata:
   name: cloudsync-pv2
 
 spec:
-  capacity: 
+  capacity:
     storage: 1Gi
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"    
+  storageClassName: "default"
   hostPath:
     path: /data/db
 
 
 
-# --------------------------------------------------      
+# --------------------------------------------------
 
 apiVersion: v1
 kind: PersistentVolume
@@ -62,17 +62,17 @@ metadata:
   name: cloudsync-pv3
 
 spec:
-  capacity: 
+  capacity:
     storage: 1Gi
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"    
+  storageClassName: "default"
   hostPath:
     path: /data/db
 
 
-# --------------------------------------------------      
+# --------------------------------------------------
 
 apiVersion: v1
 kind: PersistentVolume
@@ -80,12 +80,12 @@ metadata:
   name: cloudsync-pv4
 
 spec:
-  capacity: 
+  capacity:
     storage: 1Gi
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "standard"    
+  storageClassName: "default"
   hostPath:
     path: /data/db
 
