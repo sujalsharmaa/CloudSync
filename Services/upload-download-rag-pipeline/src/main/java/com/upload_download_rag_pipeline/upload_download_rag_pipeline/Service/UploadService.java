@@ -21,11 +21,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.TimeUnit; // <-- NEW IMPORT
+import org.springframework.beans.factory.annotation.Value;
+
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UploadService {
+
+    @Value("${authServiceUrl}")
+    private String authServiceUrl;
 
     private final SecurityService securityService;
     private final S3Service s3Service;
@@ -112,7 +117,7 @@ public class UploadService {
                 long maxQuota = GIGABYTE; // Default to 1 GB
 
                 Plan plan = restClient.get()
-                        .uri("http://localhost:8080/api/auth/getStoragePlan/{id}", userId)
+                        .uri(authServiceUrl, userId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token.getTokenValue())
                         .retrieve()
                         .body(Plan.class);

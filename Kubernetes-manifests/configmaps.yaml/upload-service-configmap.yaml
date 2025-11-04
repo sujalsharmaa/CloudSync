@@ -6,6 +6,7 @@ metadata:
 data:
   # Merged .properties and .yaml into one file
   application.yaml: |
+    authServiceUrl: cloudsync-auth-service-service.default.svc.cluster.local
     server:
       port: 8083
       reactive:
