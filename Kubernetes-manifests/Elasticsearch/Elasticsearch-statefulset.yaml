@@ -49,83 +49,70 @@
 
 
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: kafka
-spec:
-  selector:
-    app: kafka
-  ports:
-    - name: broker
-      port: 9092
-      targetPort: 9092
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: kafka
+  name: elasticsearch
 spec:
-  serviceName: kafka
   replicas: 1
   selector:
     matchLabels:
-      app: kafka
+      app: backend-elasticsearch
+  serviceName: elasticsearch
   template:
     metadata:
       labels:
-        app: kafka
+        app: backend-elasticsearch
     spec:
-      containers:
-        - name: kafka
-          image: bitnami/kafka:3.6.1
-          ports:
-            - containerPort: 9092
-              name: broker
-            - containerPort: 9093
-              name: controller
-          env:
-            # ---- KRaft (no ZooKeeper) ----
-            - name: KAFKA_CFG_PROCESS_ROLES
-              value: "broker,controller"
-            - name: KAFKA_CFG_NODE_ID
-              value: "1"
-            - name: KAFKA_CFG_LISTENERS
-              value: "PLAINTEXT://:9092,CONTROLLER://:9093"
-            - name: KAFKA_CFG_ADVERTISED_LISTENERS
-              value: "PLAINTEXT://kafka-0.kafka:9092"
-            - name: KAFKA_CFG_CONTROLLER_LISTENER_NAMES
-              value: "CONTROLLER"
-            - name: KAFKA_CFG_INTER_BROKER_LISTENER_NAME
-              value: "PLAINTEXT"
-            - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
-              value: "1@kafka-0.kafka:9093"
-
-            # ---- Make it lighter ----
-            - name: KAFKA_HEAP_OPTS
-              value: "-Xms256m -Xmx512m"
-            - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
-              value: "false"
-            - name: KAFKA_CFG_NUM_PARTITIONS
-              value: "1"
-            - name: KAFKA_CFG_LOG_RETENTION_HOURS
-              value: "12"
-            - name: KAFKA_CFG_LOG_RETENTION_BYTES
-              value: "1073741824" # 1Gi
-            - name: KAFKA_CFG_LOG_SEGMENT_BYTES
-              value: "134217728"  # 128Mi
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ['sh', '-c', 'chown -R 1000:1000 /usr/share/elasticsearch/data']
           resources:
             requests:
-              cpu: "250m"
-              memory: "512Mi"
+              cpu: "50m"
+              memory: "64Mi"
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+          ports:
+            - containerPort: 9200
+              name: http
+            - containerPort: 9300
+              name: transport
+          env:
+            - name: discovery.type
+              value: "single-node"
+            - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+            - name: xpack.security.enabled
+              value: "false"
+            - name: xpack.security.enrollment.enabled
+              value: "false"
+            - name: xpack.ml.enabled
+              value: "false"            # ✨ disable ML
+            - name: cluster.name
+              value: "docker-cluster"
+            - name: ES_SETTING_NODE_STORE_ALLOW_MMAP
+              value: "false"            # safer in some container hosts
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
             limits:
               cpu: "1"
-              memory: "1Gi"
+              memory: "2Gi"
           volumeMounts:
-            - name: cloudsync-pv2
-              mountPath: /data/db
-      volumes:
-        - name: cloudsync-pv2
-          persistentVolumeClaim:
-            claimName: cloudsync-pvc2
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+  volumeClaimTemplates:
+    - metadata:
+        name: es-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi
