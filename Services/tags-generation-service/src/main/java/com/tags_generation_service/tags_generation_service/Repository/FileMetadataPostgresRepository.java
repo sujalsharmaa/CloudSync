@@ -21,19 +21,23 @@ public interface FileMetadataPostgresRepository extends JpaRepository<FileMetada
 
     FileMetadataPostgres findByFileName(String fileName);
 
-    // --- NEW AND IMPROVED JSONB QUERIES ---
+    // --- QUERIES FIXED ---
 
     /**
      * Finds files where the 'tags' jsonb array contains the specified tag.
      * This uses the native Postgres '?' operator, which is highly efficient and indexed.
+     *
+     * We use a named parameter ":tag" to avoid ambiguity with the '?' operator.
      */
-    @Query(value = "SELECT * FROM file_metadata WHERE tags ? ?1", nativeQuery = true)
-    List<FileMetadataPostgres> findByTag(String tag);
+    @Query(value = "SELECT * FROM file_metadata WHERE tags ? :tag", nativeQuery = true)
+    List<FileMetadataPostgres> findByTag(@Param("tag") String tag);
 
     /**
      * Finds files where the 'categories' jsonb array contains the specified category.
      * This uses the native Postgres '?' operator.
+     *
+     * We use a named parameter ":category" to avoid ambiguity with the '?' operator.
      */
-    @Query(value = "SELECT * FROM file_metadata WHERE categories ? ?1", nativeQuery = true)
-    List<FileMetadataPostgres> findByCategory(String category);
+    @Query(value = "SELECT * FROM file_metadata WHERE categories ? :category", nativeQuery = true)
+    List<FileMetadataPostgres> findByCategory(@Param("category") String category);
 }
