@@ -148,9 +148,10 @@ public class StripeService {
      * This method should ONLY be called by the Webhook Controller when Stripe
      * sends a 'checkout.session.completed' event.
      *
-     * @param stripeSessionId The ID of the successful Stripe Session.
+     * @param session The ID of the successful Stripe Session.
      */
-    public void handleSuccessfulPayment(String stripeSessionId) {
+    public void handleSuccessfulPayment(Session session) {
+        String stripeSessionId = session.getId();
         // 1. Find the payment by session ID
         Optional<Payment> paymentOpt = paymentRepository.findByStripeSessionId(stripeSessionId);
 
@@ -181,8 +182,6 @@ public class StripeService {
         // 4. Retrieve user info from Stripe session metadata for email notification
         try {
             Stripe.apiKey = secretKey;
-            Session session = Session.retrieve(stripeSessionId);
-
             String email = session.getMetadata().get("email");
             String username = session.getMetadata().get("username");
             String plan = payment.getPlanPurchased().toString();
@@ -196,7 +195,7 @@ public class StripeService {
             );
             queueService.publishPlanUpgradeEmailRequest(notification);
 
-        } catch (StripeException e) {
+        } catch (Exception e) {
             logger.error("Failed to retrieve session metadata for email notification", e);
             // Continue execution - plan upgrade was successful even if email fails
         }

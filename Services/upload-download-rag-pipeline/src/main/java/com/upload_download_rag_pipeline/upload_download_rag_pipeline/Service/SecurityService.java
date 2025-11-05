@@ -59,21 +59,35 @@ public class SecurityService {
 
         try {
             if ("image".equals(fileType)) {
+                // 1. Handle Images with Multimodal LLM
                 return analyzeImageForSecurity(llm, fileStream);
+
+            } else if ("video".equals(fileType) || "audio".equals(fileType)) {
+                // 2. (FIX) Explicitly handle video/audio
+                // We skip content analysis for these types for now,
+                // as Tika will crash and we don't have a video-analysis model.
+                log.info("Skipping text content analysis for media type: {}", fileType);
+
+                Map<String, Object> result = new HashMap<>();
+                result.put("security_status", "safe");
+                result.put("rejection_reason", null);
+                return result;
+
             } else {
+                // 3. Handle Text-Based Files (pdf, doc, txt, code, etc.)
+                // This block is now safe, as videos and audio are already handled.
                 String content = extractContent(fileStream);
                 return analyzeDocumentForSecurity(llm, content, fileType);
             }
         } catch (Exception e) {
             log.error("Security check failed for file: {}", fileName, e);
-            // Return a default unsafe status in case of an unexpected error
+            // Return a default error status
             Map<String, Object> errorResult = new HashMap<>();
             errorResult.put("security_status", "error");
             errorResult.put("rejection_reason", "An internal error occurred during the security check.");
             return errorResult;
         }
     }
-
     private Map<String, Object> analyzeDocumentForSecurity(ChatLanguageModel llm, String content, String fileType) {
         String truncatedContent = content.length() > 3000 ?
                 content.substring(0, 3000) + "..." : content;

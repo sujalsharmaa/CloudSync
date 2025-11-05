@@ -1,7 +1,6 @@
 package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Service;
 
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Dto.S3UploadResult;
-import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.FileMetadataPostgres;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.Plan;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.ProcessedDocument;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +40,8 @@ public class UploadService {
     private static final long GIGABYTE = 1024 * 1024 * 1024;
 
     private static final String CONFIRMATION_KEY_PREFIX = "file:sync_confirm:";
-    private static final long ASYNC_TIMEOUT_SECONDS = 20;
+    private static final long POLL_INTERVAL_MS = 100;
+    private static final long ASYNC_TIMEOUT_SECONDS = 90;
 
     /**
      * Handles the initial file upload, security check, quota check, and S3 storage.
@@ -73,12 +73,12 @@ public class UploadService {
                 String fileType = detectFileType(tikaStream, fileName);
                 log.info("Detected file type: {} for file: {}", fileType, fileName);
 
-                // 5. SYNCHRONOUS SECURITY CHECK
+                // 4. SYNCHRONOUS SECURITY CHECK
                 Map<String, Object> securityCheckResult = securityService.checkFileSecurity(securityStream, fileName, fileType);
                 String securityStatus = (String) securityCheckResult.get("security_status");
                 String rejectionReason = (String) securityCheckResult.get("rejection_reason");
 
-                // 5a. If it's a GENUINE "unsafe" violation, increment ban count
+                // 4a. If it's a GENUINE "unsafe" violation, increment ban count
                 if ("unsafe".equalsIgnoreCase(securityStatus)) {
                     log.warn("File {} rejected due to security policy. Reason: {}", fileName, rejectionReason);
 
@@ -93,7 +93,7 @@ public class UploadService {
                             .build();
                 }
 
-                // 5b. If it's an INTERNAL error, reject the file but DO NOT ban
+                // 4b. If it's an INTERNAL error, reject the file but DO NOT ban
                 else if ("error".equalsIgnoreCase(securityStatus)) {
                     log.error("File {} rejected due to internal security check error. Reason: {}", fileName, rejectionReason);
 
@@ -105,7 +105,7 @@ public class UploadService {
                             .build();
                 }
 
-                // --- 6. STORAGE QUOTA CHECK ---
+                // --- 5. STORAGE QUOTA CHECK ---
                 long currentUsage = s3Service.getUserFolderSize(userId);
                 long maxQuota = GIGABYTE; // Default to 1 GB
 
@@ -140,7 +140,7 @@ public class UploadService {
                 }
                 // --- END QUOTA CHECK ---
 
-                // 7. If safe AND within quota, upload to S3
+                // 6. If safe AND within quota, upload to S3
                 try (InputStream s3Stream = Files.newInputStream(tempFilePath)) {
                     String s3Key = userId + "/" + fileName;
                     String confirmationKey = CONFIRMATION_KEY_PREFIX + userId + ":" + fileName;
@@ -148,49 +148,40 @@ public class UploadService {
                     S3UploadResult s3UploadResult = s3Service.uploadFile(s3Key, s3Stream);
                     log.info("File {} successfully uploaded to S3 at: {}", fileName, s3UploadResult.fileUrl());
 
-                    // 8. ASYNCHRONOUSLY trigger the metadata processing service
+                    // 7. ASYNCHRONOUSLY trigger the metadata processing service
                     queueService.publishMetadataRequest(fileName, fileType, s3UploadResult.fileUrl(), userId, newFileSize, token.getSubject());
 
-                    // --- BLOCKING WAIT FOR CONFIRMATION FROM CONSUMER (WITH PROPER HANDLING) ---
+                    // 8. WAIT FOR CONFIRMATION FROM CONSUMER VIA REDIS POLLING
                     log.info("Waiting for metadata processing confirmation on key: {}", confirmationKey);
 
                     long startTime = System.currentTimeMillis();
-                    boolean confirmed = false;
                     String confirmedFileId = null;
 
-                    // Poll Redis for the confirmation key with a timeout
+                    // Poll Redis for the confirmation key with timeout
                     while ((System.currentTimeMillis() - startTime) < ASYNC_TIMEOUT_SECONDS * 1000) {
                         confirmedFileId = stringRedisTemplate.opsForValue().get(confirmationKey);
 
                         if (confirmedFileId != null && !confirmedFileId.isEmpty()) {
-                            confirmed = true;
+                            log.info("File {} metadata processing confirmed. FileId: {}", fileName, confirmedFileId);
                             break;
                         }
 
-                        // ✅ USE THREAD.YIELD() OR NATIVE POLLING WITH PROPER EXCEPTION HANDLING
-                        // Option 1: Yield to other threads (non-blocking but high CPU)
-                        // Thread.yield();
-
-                        // Option 2: Use a brief sleep with exception handling (RECOMMENDED)
+                        // Sleep before next poll attempt
                         try {
-                            Thread.sleep(100); // Reduced from 500ms for better responsiveness
+                            Thread.sleep(POLL_INTERVAL_MS);
                         } catch (InterruptedException e) {
-                            // Handle interruption gracefully
                             log.warn("Polling for confirmation was interrupted for file: {}", fileName);
-                            Thread.currentThread().interrupt(); // Restore interrupt status
-                            break; // Exit polling loop
+                            Thread.currentThread().interrupt();
+                            break;
                         }
                     }
 
                     // Cleanup the confirmation key immediately
                     stringRedisTemplate.delete(confirmationKey);
-                    // --- END BLOCKING WAIT ---
 
-                    if (!confirmed) {
-                        log.warn("File {} metadata processing timed out after {} seconds. Returning partial success/warning.",
-                                fileName, ASYNC_TIMEOUT_SECONDS);
-                    } else {
-                        log.info("File {} metadata processing confirmed by consumer.", fileName);
+                    if (confirmedFileId == null || confirmedFileId.isEmpty()) {
+                        log.warn("File {} metadata processing timed out after {} seconds.", fileName, ASYNC_TIMEOUT_SECONDS);
+                        confirmedFileId = null;
                     }
 
                     // 9. Return a success response to the user
@@ -222,10 +213,15 @@ public class UploadService {
         }
     }
 
+    // Inside UploadService.java
+
     private String detectFileType(InputStream stream, String fileName) throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         String mimeType = tika.detect(stream, metadata);
+
+        // Add this log to see what Tika is *actually* returning
+        log.info("Tika detected MIME type: {} for file: {}", mimeType, fileName);
 
         if (mimeType.startsWith("text/") || mimeType.contains("pdf") ||
                 mimeType.contains("document") || mimeType.contains("word")) {
@@ -241,6 +237,23 @@ public class UploadService {
         } else if (mimeType.contains("spreadsheet") || mimeType.contains("excel")) {
             return "spreadsheet";
         }
+
+        // --- NEW FALLBACK LOGIC ---
+        // If Tika gives a generic type (like 'application/octet-stream' or 'default'),
+        // let's check the file extension as a fallback.
+        log.warn("Tika MIME type '{}' was not specific. Attempting fallback by file extension.", mimeType);
+        String lowerCaseFileName = fileName.toLowerCase();
+
+        if (lowerCaseFileName.endsWith(".mp4") || lowerCaseFileName.endsWith(".mkv") || lowerCaseFileName.endsWith(".webm") || lowerCaseFileName.endsWith(".mov") || lowerCaseFileName.endsWith(".avi")) {
+            log.info("Fallback logic detected 'video' type from file extension.");
+            return "video";
+        }
+        if (lowerCaseFileName.endsWith(".mp3") || lowerCaseFileName.endsWith(".wav") || lowerCaseFileName.endsWith(".m4a") || lowerCaseFileName.endsWith(".aac")) {
+            log.info("Fallback logic detected 'audio' type from file extension.");
+            return "audio";
+        }
+        // --- END OF FALLBACK LOGIC ---
+
         return "default";
     }
 }

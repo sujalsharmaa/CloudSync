@@ -20,7 +20,7 @@ public class UpgradePlanConsumeService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper; // Inject ObjectMapper for JSON processing
 
-    @KafkaListener(topics = "user-plan-upgrade", groupId = "rag-pipeline-group")
+    @KafkaListener(topics = "user-plan-upgrade")
     @Transactional
     public void listen(String message) {
         log.info("Received message from Kafka: {}", message);

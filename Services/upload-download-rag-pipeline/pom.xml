@@ -40,25 +40,12 @@
 			<artifactId>langchain4j</artifactId>
 			<version>0.35.0</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parser-text-module</artifactId>
 			<version>3.1.0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.commons</groupId>
-					<artifactId>commons-csv</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
-
-		<!-- then add the explicit commons-csv -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-csv</artifactId>
-			<version>1.11.0</version>
-		</dependency>
-
 
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
@@ -70,29 +57,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-elasticsearch</artifactId>
 		</dependency>
-		<!-- Use Netty (reactive WebFlux) instead of Tomcat -->
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>io.projectreactor.netty</groupId>
-			<artifactId>reactor-netty-http</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-tomcat</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
-		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -125,11 +95,6 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
-<!--		<dependency>-->
-<!--			<groupId>org.springframework.ai</groupId>-->
-<!--			<artifactId>spring-ai-advisors-vector-store</artifactId>-->
-<!--		</dependency>-->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -157,10 +122,6 @@
 			<artifactId>json</artifactId>
 			<version>20240303</version>
 		</dependency>
-		<!-- <dependency>
-			<groupId>org.springframework.ai</groupId>
-			<artifactId>spring-ai-starter-vector-store-chroma</artifactId>
-		</dependency> -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
@@ -188,10 +149,23 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- IO: must be >= 2.16.1 (has AbstractStreamBuilder#getReader); latest is fine -->
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.20.0</version>
+			</dependency>
+
+			<!-- keep your Tika module -->
+			<dependency>
+				<groupId>org.apache.tika</groupId>
+				<artifactId>tika-parser-text-module</artifactId>
+				<version>3.1.0</version>
+			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-csv</artifactId>
-				<version>1.11.0</version>
+				<version>1.14.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.ai</groupId>

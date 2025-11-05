@@ -57,7 +57,7 @@ public class StripeWebhookController {
 
                 // 3. CALL THE SERVICE METHOD TO UPGRADE THE PLAN
                 // This is where the actual upgrade happens after payment confirmation
-                stripeService.handleSuccessfulPayment(session.getId());
+                stripeService.handleSuccessfulPayment(session);
             } else {
                 logger.error("checkout.session.completed event data object was null.");
             }
