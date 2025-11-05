@@ -1,19 +1,18 @@
-# Stage 1: Build - Build JAR and extract layers
+# Services/auth-service/Dockerfile
+
+# Stage 1: Build
 FROM maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# 1. Build Layered JAR
+# Copy pom.xml and download dependencies (cached layer)
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
+
+# Copy source code and build
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# 2. Extract Layers
-# This uses Spring's tool to extract layers into named directories
-WORKDIR /app/target
-RUN java -Djarmode=layertools -jar *.jar extract
-
-# Stage 2: Runtime - Copy layers in order for optimal caching
+# Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
@@ -21,24 +20,15 @@ WORKDIR /app
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
-# Copy layers from build stage *in order*
-# This is the key to Docker cache optimization.
-# 'dependencies' (400MB+) will almost never change.
-COPY --from=build /app/target/dependencies/ ./
-COPY --from=build /app/target/spring-boot-loader/ ./
-COPY --from=build /app/target/snapshot-dependencies/ ./
+# Copy jar from build stage
+COPY --from=build /app/target/*.jar app.jar
 
-# 'application' (your code, ~1-2MB) is the *only* layer that
-# will be rebuilt when you change your code.
-COPY --from=build /app/target/application/ ./
-
-# Expose port for auth-service
+# Expose port
 EXPOSE 8082
 
-# Health check (updated for auth-service port)
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1
 
-# Run application using the Spring Boot loader (not -jar)
-ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
-
+# Run application
+ENTRYPOINT ["java", "-jar", "app.jar"]
