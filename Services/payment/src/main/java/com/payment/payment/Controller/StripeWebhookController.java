@@ -48,6 +48,11 @@ public class StripeWebhookController {
 
         // 2. Handle the specific event type
         if ("checkout.session.completed".equals(event.getType())) {
+
+            // --- ADD THIS LOGGING LINE ---
+            logger.info("Received checkout.session.completed. Raw event data JSON: {}", event.getData().toJson());
+            // -----------------------------
+
             Session session = (Session) event.getDataObjectDeserializer()
                     .getObject()
                     .orElse(null);
@@ -59,7 +64,7 @@ public class StripeWebhookController {
                 // This is where the actual upgrade happens after payment confirmation
                 stripeService.handleSuccessfulPayment(session);
             } else {
-                logger.error("checkout.session.completed event data object was null.");
+                logger.error("checkout.session.completed event data object was null. Deserialization failed.");
             }
         }
 
