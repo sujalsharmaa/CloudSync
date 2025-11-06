@@ -32,9 +32,15 @@ public class SecurityConfig {
                                                    JwtDecoder jwtDecoder) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) // Disabling CSRF is also necessary for webhooks
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // --- THIS IS THE FIX ---
+                        // Allow anonymous POST requests to the Stripe webhook endpoint
+                        .requestMatchers(HttpMethod.POST, "/stripe/webhook").permitAll()
+                        // ---------------------
+
                         .requestMatchers("/api/*").authenticated()
                         .anyRequest().authenticated()
                 )
