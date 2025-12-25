@@ -257,7 +257,7 @@ CloudSync is a **full-stack backend system** that mirrors real-world cloud stora
 
 ### Clone Repository
 ```bash
-git clone https://github.com/yourusername/cloudsync.git
+git clone https://github.com/sujalsharmaa/cloudsync.git
 cd cloudsync
 ```
 
@@ -620,9 +620,8 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 ## 👤 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
+- GitHub: [@sujalsharmaa](https://github.com/sujalsharmaa)
+- Email: techsharma53@gmail.com
 
 ---
 
@@ -640,8 +639,8 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 For issues, questions, or feedback:
 - 📧 Email: support@cloudsync.com
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/cloudsync/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/cloudsync/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/sujalsharmaa/cloudsync/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/sujalsharmaa/cloudsync/discussions)
 
 ---
 
