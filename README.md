@@ -263,7 +263,11 @@ cd cloudsync
 
 ### Run with Docker Compose
 ```bash
-docker-compose up -d
+spin up EC2 instance
+configure aws credentials
+run terraform init
+run terraform apply (yes)
+update application.yaml files of all microservices 
 ```
 
 This starts:
@@ -594,17 +598,15 @@ Contributions welcome! Please:
 
 ### Development Workflow
 ```bash
-# Start development environment
-docker-compose -f docker-compose.dev.yml up
+spin up EC2 instance
 
-# Watch logs
-docker-compose logs -f
+configure aws credentials
 
-# Run tests before committing
-mvn test
+run terraform init
 
-# Format code
-mvn spotless:apply
+run terraform apply (yes)
+
+update application.yaml files of all microservices 
 ```
 
 ---
