@@ -5,6 +5,12 @@ metadata:
 data:
   # I've converted and merged your .properties and .yaml into one clean file
   application.yaml: |
+    
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,prometheus
     server:
       port: 8086
     spring:

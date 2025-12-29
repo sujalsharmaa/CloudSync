@@ -6,6 +6,12 @@ metadata:
 data:
   # Merged .properties and .yaml into one file
   application.yaml: |
+    
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,prometheus
     authServiceUrl: https://auth.sujalsharma.in/api/auth/getStoragePlan/{id}
     server:
       port: 8083

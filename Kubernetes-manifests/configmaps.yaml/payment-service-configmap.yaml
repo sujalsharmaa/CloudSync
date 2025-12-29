@@ -5,6 +5,12 @@ metadata:
 data:
   # Merged .properties and .yaml into one file
   application.yaml: |
+    
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,prometheus
     redirect_url_success: https://drive.sujalsharma.in/
     server:
       port: 8084
