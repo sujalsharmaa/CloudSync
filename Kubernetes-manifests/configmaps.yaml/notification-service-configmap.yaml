@@ -11,6 +11,13 @@ data:
         web:
           exposure:
             include: health,info,prometheus
+      tracing:
+        sampling:
+          probability: 1.0
+      # REPLACE ZIPKIN CONFIG WITH THIS:
+      otlp:
+        tracing:
+          endpoint: "http://tempo.default.svc.cluster.local:4318/v1/traces"
     server:
       port: 8086
     spring:
