@@ -7,7 +7,7 @@ spec:
     app: cloudsync-payment-service
   ports:
     - name: http-web
-    - protocol: TCP
+      protocol: TCP
       port: 8084
       targetPort: 8084
   type: ClusterIP

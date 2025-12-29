@@ -7,7 +7,7 @@ spec:
     app: cloudsync-upload-service
   ports:
     - name: http-web =
-    - protocol: TCP
+      protocol: TCP
       port: 8083
       targetPort: 8083
   type: ClusterIP

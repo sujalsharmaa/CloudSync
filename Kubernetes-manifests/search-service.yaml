@@ -7,7 +7,7 @@ spec:
     app: cloudsync-search-service
   ports:
     - name: http-web
-    - protocol: TCP
+      protocol: TCP
       port: 8085
       targetPort: 8085
   type: ClusterIP
