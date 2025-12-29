@@ -102,11 +102,11 @@ data:
       gemini:
         # api-key will be injected from the Secret
         model:
-          text: gemini-2.0-flash-001
-          code: gemini-2.0-flash-001
-          image: gemini-2.0-flash-001
+          text: gemini-2.5-flash-001
+          code: gemini-2.5-flash-001
+          image: gemini-2.5-flash-001
           embedding: text-embedding-004
-          video: gemini-2.0-flash-001
+          video: gemini-2.5-flash-001
 
     # === Logging ===
     logging:
