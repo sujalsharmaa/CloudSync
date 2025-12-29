@@ -23,6 +23,7 @@ spec:
         - upload.sujalsharma.in
         - search.sujalsharma.in
         - payment.sujalsharma.in
+        - istio.sujalsharma.in
       secretName: websocket-tls
   ingressClassName: nginx
   rules:
@@ -77,3 +78,13 @@ spec:
                 name: cloudsync-search-service-service # <-- Assumed name, please verify
                 port:
                   number: 8085 # <-- Assumed port, please verify
+    - host: istio.sujalsharma.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kiali # <-- Assumed name, please verify
+                port:
+                  number: 20001 # <-- Assumed port, please verify
