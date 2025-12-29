@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: cloudsync-tags-generation-service-service
+  labels:
+    app: cloudsync-tags-generation-service
 spec:
   selector:
     app: cloudsync-tags-generation-service
