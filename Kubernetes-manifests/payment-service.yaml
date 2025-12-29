@@ -6,6 +6,7 @@ spec:
   selector:
     app: cloudsync-payment-service
   ports:
+    - name: http-web
     - protocol: TCP
       port: 8084
       targetPort: 8084

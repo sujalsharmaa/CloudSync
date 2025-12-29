@@ -6,6 +6,7 @@ spec:
   selector:
     app: cloudsync-tags-generation-service
   ports:
+    - name: http-web
     - protocol: TCP
       port: 8082
       targetPort: 8082

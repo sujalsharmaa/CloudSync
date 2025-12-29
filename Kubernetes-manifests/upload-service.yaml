@@ -6,6 +6,7 @@ spec:
   selector:
     app: cloudsync-upload-service
   ports:
+    - name: http-web =
     - protocol: TCP
       port: 8083
       targetPort: 8083

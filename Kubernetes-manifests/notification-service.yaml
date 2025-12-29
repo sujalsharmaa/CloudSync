@@ -6,6 +6,7 @@ spec:
   selector:
     app: cloudsync-notification-service
   ports:
+    - name: http-web
     - protocol: TCP
       port: 8086
       targetPort: 8086

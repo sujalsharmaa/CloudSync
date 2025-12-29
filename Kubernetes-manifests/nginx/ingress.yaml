@@ -85,6 +85,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: kiali # <-- Assumed name, please verify
+                name: kiali-bridge # <-- Assumed name, please verify
                 port:
                   number: 20001 # <-- Assumed port, please verify

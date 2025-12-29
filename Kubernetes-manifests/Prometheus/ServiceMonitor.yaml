@@ -1,0 +1,100 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: auth-service-monitor
+  namespace: default # Change if your app is in a different namespace
+  labels:
+    release: monitoring # Must match your Prometheus Operator release name
+spec:
+  selector:
+    matchLabels:
+      app: cloudsync-auth-service # Matches auth-service.yaml
+  endpoints:
+    - port: http-web
+      path: /actuator/prometheus
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: notification-service-monitor
+  namespace: default
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: cloudsync-notification-service # Matches notification-service.yaml
+  endpoints:
+    - port: http-web
+      path: /actuator/prometheus
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: payment-service-monitor
+  namespace: default
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: cloudsync-payment-service # Matches payment-service.yaml
+  endpoints:
+    - port: http-web
+      path: /actuator/prometheus
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: search-service-monitor
+  namespace: default
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: cloudsync-search-service # Matches search-service.yaml
+  endpoints:
+    - port: http-web
+      path: /actuator/prometheus
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tags-generation-service-monitor
+  namespace: default
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: cloudsync-tags-generation-service # Matches tags-generation-service.yaml
+  endpoints:
+    - port: http-web
+      path: /actuator/prometheus
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: upload-service-monitor
+  namespace: default
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: cloudsync-upload-service # Matches upload-service.yaml
+  endpoints:
+    - port: http-web
+      path: /actuator/prometheus
+      interval: 15s

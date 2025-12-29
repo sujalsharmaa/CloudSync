@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kiali-bridge  # We call it bridge to distinguish it
+  # namespace: default  <-- Make sure this matches your Ingress namespace
+spec:
+  type: ExternalName
+  externalName: kiali.istio-system.svc.cluster.local # Points to the real Kiali
+  ports:
+    - port: 20001
+      protocol: TCP
+      targetPort: 20001

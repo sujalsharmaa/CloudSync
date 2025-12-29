@@ -6,6 +6,7 @@ spec:
   selector:
     app: cloudsync-auth-service
   ports:
+    - name: http-web
     - protocol: TCP
       port: 8080
       targetPort: 8080
