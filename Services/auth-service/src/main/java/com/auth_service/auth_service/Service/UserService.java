@@ -15,7 +15,7 @@ import java.util.Optional;
 public class UserService {
 
     @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
     private final QueueService queueService;
 
     public User processOAuth2User(OAuth2User oAuth2User) {
