@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/genai/process").permitAll() // Or be more specific for your endpoint
                         .requestMatchers("/", "/auth/**", "/oauth2/**", "/h2-console/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/**","/api/hello").permitAll()
                         .anyRequest().authenticated()
                 )
