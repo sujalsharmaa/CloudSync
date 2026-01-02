@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluent-bit
+  labels:
+    app: fluent-bit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      containers:
+        - name: fluent-bit
+          image: fluent/fluent-bit:2.2.2
+          volumeMounts:
+            - name: config-volume
+              mountPath: /fluent-bit/etc/fluent-bit.conf
+              subPath: fluent-bit.conf
+            - name: config-volume
+              mountPath: /fluent-bit/etc/parsers.conf
+              subPath: parsers.conf
+      volumes:
+        - name: config-volume
+          configMap:
+            name: fluent-bit-config

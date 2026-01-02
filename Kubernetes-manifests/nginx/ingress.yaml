@@ -24,6 +24,7 @@ spec:
         - search.sujalsharma.in
         - payment.sujalsharma.in
         - istio.sujalsharma.in
+        - kibana.sujalsharma.in
       secretName: websocket-tls
   ingressClassName: nginx
   rules:
@@ -88,3 +89,13 @@ spec:
                 name: kiali-bridge # <-- Assumed name, please verify
                 port:
                   number: 20001 # <-- Assumed port, please verify
+    - host: kibana.sujalsharma.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kibana # <-- Assumed name, please verify
+                port:
+                  number: 5601 # <-- Assumed port, please verify
