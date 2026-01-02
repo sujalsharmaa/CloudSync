@@ -72,10 +72,10 @@ data:
         Host            elasticsearch
         Port            9200
         Index           fluent-bit
+        Logstash_Format On
+        Replace_Dots    On
         Suppress_Type_Name On
         Generate_ID     On
-        Replace_Dots    On
-        Retry_Limit     False
 
   parsers.conf: |
     [PARSER]
