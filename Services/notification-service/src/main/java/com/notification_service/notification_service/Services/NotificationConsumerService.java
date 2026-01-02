@@ -21,27 +21,25 @@ public class NotificationConsumerService {
      * Consumes messages from the ban notification topic, sends an appropriate email.
      * @param message The JSON string containing the BanNotification data.
      */
-    @KafkaListener(topics = NOTIFICATION_TOPIC,groupId = GROUP_ID)
+    @KafkaListener(topics = NOTIFICATION_TOPIC, groupId = GROUP_ID)
     public void consumeBanNotification(String message) {
+        // Removed try-catch to allow EmailSendingException to bubble up for Retry
         try {
             BanNotification notification = objectMapper.readValue(message, BanNotification.class);
             log.info("Received ban notification for user: {}", notification.getEmail());
 
-            // --- 1. Compose Email Content ---
             String subject = String.format("URGENT: Account Suspension - %s", notification.getBanDuration());
-
-            // Build the HTML body using the private helper method
             String htmlBody = buildBanEmailBody(notification);
 
-            // --- 2. Send Email via MailService ---
-            // The MailService will now be guaranteed to be non-null by Spring
             mailService.sendHtmlEmail(notification.getEmail(), subject, htmlBody);
 
             log.info("Successfully processed and sent ban email to {}.", notification.getEmail());
 
-        } catch (Exception e) {
-            log.error("Error processing ban notification message: {}", message, e);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            // JSON errors likely won't be fixed by retrying, so we catch and log these to avoid infinite loops.
+            log.error("Fatal error: Could not parse BanNotification JSON: {}", message, e);
         }
+        // Note: EmailSendingException is NOT caught here, so Kafka will retry.
     }
 
     private String buildBanEmailBody(BanNotification notification) {

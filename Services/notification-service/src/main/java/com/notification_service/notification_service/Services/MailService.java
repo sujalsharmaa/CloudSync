@@ -1,5 +1,6 @@
 package com.notification_service.notification_service.Services;
 
+import com.notification_service.notification_service.Exception.EmailSendingException; // Import custom exception
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -18,23 +19,14 @@ public class MailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    /**
-     * Sends a plain text email to the specified recipient.
-     */
     public void sendEmail(String toEmail, String subject, String body) {
         sendEmail(toEmail, subject, body, false);
     }
 
-    /**
-     * Sends an HTML email to the specified recipient.
-     */
     public void sendHtmlEmail(String toEmail, String subject, String htmlBody) {
         sendEmail(toEmail, subject, htmlBody, true);
     }
 
-    /**
-     * Internal method to send email with HTML support.
-     */
     private void sendEmail(String toEmail, String subject, String body, boolean isHtml) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -43,14 +35,18 @@ public class MailService {
             helper.setFrom(fromEmail);
             helper.setTo(toEmail);
             helper.setSubject(subject);
-            helper.setText(body, isHtml); // Second parameter enables HTML
+            helper.setText(body, isHtml);
 
             mailSender.send(message);
             log.info("Successfully sent {} email to {} with subject: {}",
                     isHtml ? "HTML" : "plain text", toEmail, subject);
         } catch (MessagingException e) {
-            log.error("Failed to send email to {}: {}", toEmail, e.getMessage(), e);
-            // Depending on policy, you might want to retry sending here.
+            log.error("Failed to send email to {}: {}", toEmail, e.getMessage());
+            // THROW the exception so the caller (Kafka Consumer) knows it failed
+            throw new EmailSendingException("Failed to send email to " + toEmail, e);
+        } catch (Exception e) {
+            log.error("Unexpected error sending email to {}: {}", toEmail, e.getMessage());
+            throw new EmailSendingException("Unexpected error during email sending", e);
         }
     }
 }

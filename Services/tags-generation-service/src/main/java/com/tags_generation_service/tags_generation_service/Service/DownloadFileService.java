@@ -1,5 +1,6 @@
 package com.tags_generation_service.tags_generation_service.Service;
 
+import com.tags_generation_service.tags_generation_service.Exception.BusinessException; // Import
 import com.tags_generation_service.tags_generation_service.Model.FileMetadataPostgres;
 import com.tags_generation_service.tags_generation_service.Repository.FileMetadataPostgresRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,14 +27,13 @@ public class DownloadFileService {
         List<FileMetadataPostgres> filesToDownload = fileMetadataPostgresRepository.findAllById(fileIds);
 
         if (filesToDownload.isEmpty()) {
-            return new byte[0]; // Return an empty byte array if no files found
+            return new byte[0];
         }
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zipOut = new ZipOutputStream(baos)) {
 
             for (FileMetadataPostgres file : filesToDownload) {
-                // FIX: Use getS3Location() which contains the full key, not just the filename.
                 try (InputStream inputStream = s3Service.downloadFile(file.getS3Location())) {
                     ZipEntry zipEntry = new ZipEntry(file.getFileName());
                     zipOut.putNextEntry(zipEntry);
@@ -46,11 +46,16 @@ public class DownloadFileService {
                     zipOut.closeEntry();
                 } catch (IOException e) {
                     log.error("Failed to download or zip file {}: {}", file.getFileName(), e.getMessage());
-                    // Depending on requirements, you might want to re-throw or continue
+                    // We can choose to skip this file (partial success) or fail the whole request.
+                    // For now, logging and continuing is a valid strategy for bulk download,
+                    // but if strict consistency is needed:
+                    // throw new BusinessException("Failed to download file: " + file.getFileName());
                 }
             }
             zipOut.finish();
             return baos.toByteArray();
+        } catch (IOException e) {
+            throw new BusinessException("Error processing zip stream: " + e.getMessage());
         }
     }
 }

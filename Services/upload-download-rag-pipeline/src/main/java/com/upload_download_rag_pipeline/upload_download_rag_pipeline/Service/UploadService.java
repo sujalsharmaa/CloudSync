@@ -1,6 +1,8 @@
 package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Service;
 
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Dto.S3UploadResult;
+import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception.StorageQuotaExceededException; //
+import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception.BusinessException; //
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.Plan;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.ProcessedDocument;
 import lombok.RequiredArgsConstructor;
@@ -8,19 +10,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.beans.factory.annotation.Value;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -43,83 +44,61 @@ public class UploadService {
     private static final long POLL_INTERVAL_MS = 100;
     private static final long ASYNC_TIMEOUT_SECONDS = 90;
 
-    /**
-     * Handles the initial file upload, security check, quota check, and S3 storage.
-     */
     public ProcessedDocument processFile(InputStream fileStream, String fileName, String userId, Jwt token) {
         // --- PRE-CHECK: CHECK BAN STATUS ---
         if (redisBanService.isUserBanned(userId)) {
             log.warn("File {} rejected: User {} is currently banned.", fileName, userId);
+            // You can optionally throw an AccessDeniedException here if you want a 403 response
+            // throw new org.springframework.security.access.AccessDeniedException("User is banned");
+
             return ProcessedDocument.builder()
                     .fileName(fileName)
                     .securityStatus("banned")
                     .rejectionReason("User account is temporarily or permanently banned due to policy violations.")
                     .build();
         }
-        // --- END PRE-CHECK ---
 
         Path tempFilePath = null;
         try {
-            // 1. Write the incoming stream to a temporary file
             tempFilePath = Files.createTempFile("upload-", fileName);
             long newFileSize = Files.copy(fileStream, tempFilePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             log.info("File saved to temporary path: {} with size: {} bytes", tempFilePath, newFileSize);
 
-            // 2. Open multiple streams
             try (InputStream tikaStream = Files.newInputStream(tempFilePath);
                  InputStream securityStream = Files.newInputStream(tempFilePath)) {
 
-                // 3. Detect file type
                 String fileType = detectFileType(tikaStream, fileName);
-                log.info("Detected file type: {} for file: {}", fileType, fileName);
 
-                // 4. SYNCHRONOUS SECURITY CHECK
                 Map<String, Object> securityCheckResult = securityService.checkFileSecurity(securityStream, fileName, fileType);
                 String securityStatus = (String) securityCheckResult.get("security_status");
                 String rejectionReason = (String) securityCheckResult.get("rejection_reason");
 
-                // 4a. If it's a GENUINE "unsafe" violation, increment ban count
                 if ("unsafe".equalsIgnoreCase(securityStatus)) {
                     log.warn("File {} rejected due to security policy. Reason: {}", fileName, rejectionReason);
+                    redisBanService.incrementViolationAndCheckBan(userId, token.getSubject());
 
-                    long violationCount = redisBanService.incrementViolationAndCheckBan(userId, token.getSubject());
-                    log.warn("User {} policy violation count increased to {}.", userId, violationCount);
-
-                    return ProcessedDocument.builder()
-                            .fileName(fileName)
-                            .fileType(fileType)
-                            .securityStatus(securityStatus)
-                            .rejectionReason(rejectionReason)
-                            .build();
+                    // Throwing BusinessException ensures a 400 Bad Request with the reason
+                    throw new BusinessException("Security Policy Violation: " + rejectionReason);
+                } else if ("error".equalsIgnoreCase(securityStatus)) {
+                    throw new BusinessException("Internal Security Check Error: " + rejectionReason);
                 }
 
-                // 4b. If it's an INTERNAL error, reject the file but DO NOT ban
-                else if ("error".equalsIgnoreCase(securityStatus)) {
-                    log.error("File {} rejected due to internal security check error. Reason: {}", fileName, rejectionReason);
-
-                    return ProcessedDocument.builder()
-                            .fileName(fileName)
-                            .fileType(fileType)
-                            .securityStatus("rejected_internal_error")
-                            .rejectionReason("File could not be processed due to an internal system error. Please try again later.")
-                            .build();
-                }
-
-                // --- 5. STORAGE QUOTA CHECK ---
+                // --- 5. STORAGE QUOTA CHECK REFACTORED ---
                 long currentUsage = s3Service.getUserFolderSize(userId);
-                long maxQuota = GIGABYTE; // Default to 1 GB
+                long maxQuota = GIGABYTE;
 
                 Plan plan = restClient.get()
                         .uri(authServiceUrl, userId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token.getTokenValue())
                         .retrieve()
                         .body(Plan.class);
-                switch (plan) {
-                    case DEFAULT -> maxQuota = GIGABYTE;
-                    case BASIC -> maxQuota = GIGABYTE * 100;
-                    case PRO -> maxQuota = GIGABYTE * 1000;
-                    case TEAM -> maxQuota = GIGABYTE * 5000;
-                    case null -> maxQuota = GIGABYTE;
+
+                if (plan != null) {
+                    switch (plan) {
+                        case BASIC -> maxQuota = GIGABYTE * 100;
+                        case PRO -> maxQuota = GIGABYTE * 1000;
+                        case TEAM -> maxQuota = GIGABYTE * 5000;
+                    }
                 }
 
                 if (currentUsage + newFileSize > maxQuota) {
@@ -129,62 +108,44 @@ public class UploadService {
                             (double) currentUsage / (1024 * 1024 * 1024),
                             (double) newFileSize / (1024 * 1024)
                     );
-
                     log.warn("File {} rejected for user {} because storage quota would be exceeded.", fileName, userId);
-                    return ProcessedDocument.builder()
-                            .fileName(fileName)
-                            .fileType(fileType)
-                            .securityStatus("rejected")
-                            .rejectionReason(quotaRejectionReason)
-                            .build();
+
+                    // THROWING THE CUSTOM EXCEPTION HERE
+                    throw new StorageQuotaExceededException(quotaRejectionReason);
                 }
                 // --- END QUOTA CHECK ---
 
-                // 6. If safe AND within quota, upload to S3
                 try (InputStream s3Stream = Files.newInputStream(tempFilePath)) {
                     String s3Key = userId + "/" + fileName;
                     String confirmationKey = CONFIRMATION_KEY_PREFIX + userId + ":" + fileName;
 
                     S3UploadResult s3UploadResult = s3Service.uploadFile(s3Key, s3Stream);
-                    log.info("File {} successfully uploaded to S3 at: {}", fileName, s3UploadResult.fileUrl());
-
-                    // 7. ASYNCHRONOUSLY trigger the metadata processing service
                     queueService.publishMetadataRequest(fileName, fileType, s3UploadResult.fileUrl(), userId, newFileSize, token.getSubject());
 
-                    // 8. WAIT FOR CONFIRMATION FROM CONSUMER VIA REDIS POLLING
                     log.info("Waiting for metadata processing confirmation on key: {}", confirmationKey);
-
                     long startTime = System.currentTimeMillis();
                     String confirmedFileId = null;
 
-                    // Poll Redis for the confirmation key with timeout
                     while ((System.currentTimeMillis() - startTime) < ASYNC_TIMEOUT_SECONDS * 1000) {
                         confirmedFileId = stringRedisTemplate.opsForValue().get(confirmationKey);
-
                         if (confirmedFileId != null && !confirmedFileId.isEmpty()) {
-                            log.info("File {} metadata processing confirmed. FileId: {}", fileName, confirmedFileId);
                             break;
                         }
-
-                        // Sleep before next poll attempt
                         try {
                             Thread.sleep(POLL_INTERVAL_MS);
                         } catch (InterruptedException e) {
-                            log.warn("Polling for confirmation was interrupted for file: {}", fileName);
                             Thread.currentThread().interrupt();
                             break;
                         }
                     }
-
-                    // Cleanup the confirmation key immediately
                     stringRedisTemplate.delete(confirmationKey);
 
                     if (confirmedFileId == null || confirmedFileId.isEmpty()) {
-                        log.warn("File {} metadata processing timed out after {} seconds.", fileName, ASYNC_TIMEOUT_SECONDS);
+                        log.warn("File {} metadata processing timed out.", fileName);
+                        // Optional: throw new BusinessException("Processing timed out");
                         confirmedFileId = null;
                     }
 
-                    // 9. Return a success response to the user
                     return ProcessedDocument.builder()
                             .id(confirmedFileId)
                             .fileName(fileName)
@@ -194,34 +155,31 @@ public class UploadService {
                             .userId(userId)
                             .securityStatus("safe")
                             .build();
-                } // s3Stream closed here
+                }
 
-            } // tikaStream and securityStream closed here
+            }
+        } catch (StorageQuotaExceededException | BusinessException e) {
+            // Re-throw these so the GlobalExceptionHandler catches them
+            throw e;
         } catch (Exception e) {
             log.error("Error processing file: {}", fileName, e);
             throw new RuntimeException("Failed to process file", e);
         } finally {
-            // 10. CRITICAL: Ensure the temporary file is deleted after processing
             if (tempFilePath != null) {
                 try {
                     Files.deleteIfExists(tempFilePath);
-                    log.info("Temporary file deleted: {}", tempFilePath);
                 } catch (IOException e) {
-                    log.error("Failed to delete temporary file: {}", tempFilePath, e);
+                    log.error("Failed to delete temporary file", e);
                 }
             }
         }
     }
 
-    // Inside UploadService.java
-
     private String detectFileType(InputStream stream, String fileName) throws Exception {
+        // ... existing implementation ...
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         String mimeType = tika.detect(stream, metadata);
-
-        // Add this log to see what Tika is *actually* returning
-        log.info("Tika detected MIME type: {} for file: {}", mimeType, fileName);
 
         if (mimeType.startsWith("text/") || mimeType.contains("pdf") ||
                 mimeType.contains("document") || mimeType.contains("word")) {
@@ -238,21 +196,13 @@ public class UploadService {
             return "spreadsheet";
         }
 
-        // --- NEW FALLBACK LOGIC ---
-        // If Tika gives a generic type (like 'application/octet-stream' or 'default'),
-        // let's check the file extension as a fallback.
-        log.warn("Tika MIME type '{}' was not specific. Attempting fallback by file extension.", mimeType);
         String lowerCaseFileName = fileName.toLowerCase();
-
         if (lowerCaseFileName.endsWith(".mp4") || lowerCaseFileName.endsWith(".mkv") || lowerCaseFileName.endsWith(".webm") || lowerCaseFileName.endsWith(".mov") || lowerCaseFileName.endsWith(".avi")) {
-            log.info("Fallback logic detected 'video' type from file extension.");
             return "video";
         }
         if (lowerCaseFileName.endsWith(".mp3") || lowerCaseFileName.endsWith(".wav") || lowerCaseFileName.endsWith(".m4a") || lowerCaseFileName.endsWith(".aac")) {
-            log.info("Fallback logic detected 'audio' type from file extension.");
             return "audio";
         }
-        // --- END OF FALLBACK LOGIC ---
 
         return "default";
     }

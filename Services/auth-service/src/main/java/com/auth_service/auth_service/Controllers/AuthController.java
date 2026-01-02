@@ -1,19 +1,19 @@
+
 package com.auth_service.auth_service.Controllers;
 
 import com.auth_service.auth_service.DTO.StoragePlanResponse;
-import com.auth_service.auth_service.DTO.WelcomeEmailNotification;
 import com.auth_service.auth_service.Entity.type.Plan;
 import com.auth_service.auth_service.Entity.type.User;
-import com.auth_service.auth_service.Service.QueueService;
+import com.auth_service.auth_service.Exception.ResourceNotFoundException;
 import com.auth_service.auth_service.Service.S3Service;
 import com.auth_service.auth_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -22,11 +22,15 @@ public class AuthController {
 
     private final UserService userService;
     private final S3Service s3Service;
-    private final QueueService queueService;
 
     @GetMapping("/user")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal User user) {
+        // If security filter chain is working correctly, user shouldn't be null here for authenticated endpoints.
+        // However, if it is null, we can let the GlobalExceptionHandler handle a custom exception or standard Security exception.
         if (user == null) {
+            // You can throw a BusinessException or rely on Spring Security's own handling.
+            // For now, keeping your manual check but standardized could look like:
+            // throw new BadCredentialsException("User is not authenticated");
             return ResponseEntity.status(401).body("Unauthorized");
         }
 
@@ -39,49 +43,25 @@ public class AuthController {
         return ResponseEntity.ok(userInfo);
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        // Since we're using stateless JWT, logout is handled on the client side
-        return ResponseEntity.ok().body("Logged out successfully");
-    }
-
-    @GetMapping("/login/google")
-    public void redirectToGoogle() {
-        // This will be handled by Spring Security OAuth2
-    }
 
     @GetMapping("/getStoragePlan/{userId}")
-    public ResponseEntity<Plan> getUserStoragePlan(@PathVariable String userId){
-        // 1. Fetch user data (optional check is good practice)
-        Optional<User> userResponse =  userService.findById(Long.valueOf(userId));
+    public ResponseEntity<Plan> getUserStoragePlan(@PathVariable Long  userId) {
+        // Refactored to throw ResourceNotFoundException
+        User foundUser = userService.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User"));
 
-        if (userResponse.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        User foundUser = userResponse.get();
-
-        // 4. Return the ResponseEntity with the DTO and HTTP status OK
         return ResponseEntity.ok(foundUser.getPlan());
     }
 
     @GetMapping("/getStoragePlanAndConsumption")
-    public ResponseEntity<StoragePlanResponse> getUserStoragePlanAndConsumption(@AuthenticationPrincipal User user){
-        // 1. Fetch user data (optional check is good practice)
-        Optional<User> userResponse =  userService.findById(user.getId());
+    public ResponseEntity<StoragePlanResponse> getUserStoragePlanAndConsumption(@AuthenticationPrincipal User user) {
+        // Refactored to throw ResourceNotFoundException
+        User foundUser = userService.findById(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", user.getId()));
 
-        if (userResponse.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        Long storageConsumed = s3Service.getUserFolderSize(String.valueOf(user.getId()));
+        StoragePlanResponse responseDTO = new StoragePlanResponse(foundUser.getPlan(), storageConsumed);
 
-        User foundUser = userResponse.get();
-
-        // 2. Get storage consumed
-        Long StorageConsumed = s3Service.getUserFolderSize(String.valueOf(user.getId()));
-
-        // 3. Create the DTO instance
-        StoragePlanResponse responseDTO = new StoragePlanResponse(foundUser.getPlan(), StorageConsumed);
-
-        // 4. Return the ResponseEntity with the DTO and HTTP status OK
         return ResponseEntity.ok(responseDTO);
     }
 }
