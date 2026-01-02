@@ -72,7 +72,7 @@ data:
         Host            elasticsearch
         Port            9200
         Index           fluent-bit
-        Type            _doc
+        Suppress_Type_Name On
         Generate_ID     On
         Replace_Dots    On
         Retry_Limit     False
