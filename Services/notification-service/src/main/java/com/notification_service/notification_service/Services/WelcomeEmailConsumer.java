@@ -26,7 +26,7 @@ public class WelcomeEmailConsumer {
     private final ObjectMapper objectMapper;
     private final MailService mailService;
 
-    @Value("classpath:templates/welcome-email.html")
+    @Value("classpath:templates/welcome.html")
     private Resource welcomeEmailTemplate;
 
     private String htmlTemplate;
