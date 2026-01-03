@@ -52,6 +52,7 @@ public class UploadService {
     private static final long ASYNC_TIMEOUT_SECONDS = 90;
     private static final long POLL_INTERVAL_MS = 100;
 
+
     public ProcessedDocument processFile(InputStream fileStream, String fileName, String userId, Jwt token) {
         // 1. Pre-Check: Is User Banned?
         checkBanStatus(userId, fileName);
@@ -71,7 +72,11 @@ public class UploadService {
             // 5. Upload & Process
             return uploadAndConfirm(tempFilePath, fileName, fileType, userId, fileSize, token);
 
+        } catch (BusinessException | StorageQuotaExceededException e) {
+            // Rethrow domain-specific exceptions as-is so the Controller/Test receives them directly
+            throw e;
         } catch (Exception e) {
+            // Wrap unexpected technical errors (IO, etc.)
             log.error("IO Error processing file: {}", fileName, e);
             throw new RuntimeException("Failed to process file upload", e);
         } finally {

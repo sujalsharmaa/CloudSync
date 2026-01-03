@@ -2,6 +2,7 @@ package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Service;
 
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Dto.S3UploadResult;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception.BusinessException;
+import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception.StorageQuotaExceededException;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.Plan;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.ProcessedDocument;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -114,6 +115,9 @@ class UploadServiceTest {
     /**
      * Test Case UP-02: Block Upload Exceeding Plan Quota
      */
+    /**
+     * Test Case UP-02: Block Upload Exceeding Plan Quota
+     */
     @Test
     void processFile_ShouldReject_WhenQuotaExceeded() throws Exception {
         // Arrange
@@ -129,11 +133,12 @@ class UploadServiceTest {
         when(s3Service.getUserFolderSize(userId)).thenReturn(almostFull);
 
         // Act & Assert
-        // Updated to expect BusinessException based on your stack trace behavior
-        BusinessException exception = assertThrows(BusinessException.class, () ->
+        // CHANGED: Expect StorageQuotaExceededException instead of BusinessException
+        StorageQuotaExceededException exception = assertThrows(StorageQuotaExceededException.class, () ->
                 uploadService.processFile(fileStream, fileName, userId, mockJwt)
         );
 
+        // Verify the message contains the expected error text
         assertTrue(exception.getMessage().contains("Storage quota exceeded") ||
                 exception.getMessage().contains("quota"));
 
