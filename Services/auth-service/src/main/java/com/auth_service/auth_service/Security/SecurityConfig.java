@@ -35,6 +35,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/genai/process").permitAll() // Or be more specific for your endpoint
                         .requestMatchers("/", "/auth/**", "/oauth2/**", "/h2-console/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/swagger-resources/**",
+                                "/webjars/**").permitAll()
                         .requestMatchers("/actuator/**","/api/hello").permitAll()
                         .anyRequest().authenticated()
                 )

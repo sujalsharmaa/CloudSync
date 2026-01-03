@@ -1,10 +1,12 @@
 package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Service;
 
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Dto.S3UploadResult;
-import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception.StorageQuotaExceededException; //
-import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception.BusinessException; //
+import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception.StorageQuotaExceededException;
+import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception.BusinessException;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.Plan;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.ProcessedDocument;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
@@ -22,6 +24,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
@@ -37,6 +40,7 @@ public class UploadService {
     private final RestClient restClient;
     private final RedisBanService redisBanService;
     private final StringRedisTemplate stringRedisTemplate;
+    private final CircuitBreakerRegistry circuitBreakerRegistry; // Injected
     private final Tika tika = new Tika();
     private static final long GIGABYTE = 1024 * 1024 * 1024;
 
@@ -83,15 +87,31 @@ public class UploadService {
                     throw new BusinessException("Internal Security Check Error: " + rejectionReason);
                 }
 
-                // --- 5. STORAGE QUOTA CHECK REFACTORED ---
+                // --- 5. STORAGE QUOTA CHECK REFACTORED (WITH RESILIENCE4J) ---
                 long currentUsage = s3Service.getUserFolderSize(userId);
                 long maxQuota = GIGABYTE;
 
-                Plan plan = restClient.get()
-                        .uri(authServiceUrl, userId)
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token.getTokenValue())
-                        .retrieve()
-                        .body(Plan.class);
+                // Wrap RestClient call in Circuit Breaker
+                CircuitBreaker circuitBreaker = circuitBreakerRegistry.circuitBreaker("authService");
+                Supplier<Plan> planSupplier = CircuitBreaker.decorateSupplier(circuitBreaker, () ->
+                        restClient.get()
+                                .uri(authServiceUrl, userId)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token.getTokenValue())
+                                .retrieve()
+                                .body(Plan.class)
+                );
+
+                Plan plan;
+                try {
+                    plan = planSupplier.get();
+                } catch (Exception e) {
+                    log.warn("Circuit Breaker: Auth Service unavailable or failing. Defaulting to BASIC plan. Error: {}", e.getMessage());
+                    // Fallback: If auth service is down, we cannot verify premium plans.
+                    // Default to BASIC to be safe, or throw error depending on business logic.
+                    // Here we assume BASIC to avoid blocking uploads if possible, or handle strictly.
+                    // For now, we will treat it as null/default in the switch below.
+                    plan = Plan.BASIC;
+                }
 
                 if (plan != null) {
                     switch (plan) {

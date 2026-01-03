@@ -28,6 +28,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<spring-ai.version>1.0.1</spring-ai.version>
+		<resilience4j.version>2.2.0</resilience4j.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -40,7 +41,11 @@
 			<artifactId>langchain4j</artifactId>
 			<version>0.35.0</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+			<version>2.6.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parser-text-module</artifactId>
@@ -70,7 +75,12 @@
 			<artifactId>spring-boot-starter-aop</artifactId>
 		</dependency>
 
-		<!-- AspectJ Runtime (if not included) -->
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-spring-boot3</artifactId>
+			<version>${resilience4j.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.aspectj</groupId>
 			<artifactId>aspectjweaver</artifactId>
@@ -175,14 +185,12 @@
 
 	<dependencyManagement>
 		<dependencies>
-			<!-- IO: must be >= 2.16.1 (has AbstractStreamBuilder#getReader); latest is fine -->
 			<dependency>
 				<groupId>commons-io</groupId>
 				<artifactId>commons-io</artifactId>
 				<version>2.20.0</version>
 			</dependency>
 
-			<!-- keep your Tika module -->
 			<dependency>
 				<groupId>org.apache.tika</groupId>
 				<artifactId>tika-parser-text-module</artifactId>

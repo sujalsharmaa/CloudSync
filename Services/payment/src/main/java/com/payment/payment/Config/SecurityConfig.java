@@ -39,7 +39,12 @@ public class SecurityConfig {
                         // --- THIS IS THE FIX ---
                         // Allow anonymous POST requests to the Stripe webhook endpoint
                         .requestMatchers(HttpMethod.POST, "/stripe/webhook").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/actuator/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/swagger-resources/**",
+                                "/webjars/**").permitAll()
                         // ---------------------
 
                         .requestMatchers("/api/*").authenticated()

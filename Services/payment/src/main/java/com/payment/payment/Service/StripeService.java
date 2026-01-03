@@ -12,6 +12,7 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ public class StripeService {
         return quantity;
     }
 
+    @CircuitBreaker(name = "stripeService", fallbackMethod = "checkoutFallback")
     public StripeResponse checkoutProducts(ServiceRequest serviceRequest, Jwt jwt) {
         Stripe.apiKey = secretKey;
 
@@ -124,6 +126,11 @@ public class StripeService {
             // Throw BusinessException to return clean error JSON
             throw new BusinessException("Payment session could not be created: " + e.getMessage());
         }
+    }
+
+    public StripeResponse checkoutFallback(ServiceRequest serviceRequest, Jwt jwt, Throwable t) {
+        logger.error("Circuit Breaker: Stripe service is currently unavailable or failing. Reason: {}", t.getMessage());
+        throw new BusinessException("Payment service is temporarily unavailable. Please try again later.");
     }
 
     // handleSuccessfulPayment remains the same...
