@@ -22,9 +22,8 @@ public class UpgradePlanConsumeService {
 
     @KafkaListener(topics = "user-plan-upgrade")
     @Transactional
-    public void listen(String message) {
+    public void listen(String message) throws Exception {
         log.info("Received message from Kafka: {}", message);
-        try {
             // Fix 1 & 2: Use ObjectMapper to correctly map the JSON string to the DTO
             PlanUpgradeDto planUpgradeDto = objectMapper.readValue(message, PlanUpgradeDto.class);
 
@@ -44,8 +43,5 @@ public class UpgradePlanConsumeService {
                 log.warn("User with ID {} not found for plan upgrade.", planUpgradeDto.getUserId());
             }
 
-        } catch (Exception e) {
-            log.error("Error processing Kafka message: {}", message, e);
-        }
     }
 }

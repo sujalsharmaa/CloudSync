@@ -22,9 +22,8 @@ public class NotificationConsumerService {
      * @param message The JSON string containing the BanNotification data.
      */
     @KafkaListener(topics = NOTIFICATION_TOPIC, groupId = GROUP_ID)
-    public void consumeBanNotification(String message) {
+    public void consumeBanNotification(String message) throws Exception {
         // Removed try-catch to allow EmailSendingException to bubble up for Retry
-        try {
             BanNotification notification = objectMapper.readValue(message, BanNotification.class);
             log.info("Received ban notification for user: {}", notification.getEmail());
 
@@ -35,10 +34,6 @@ public class NotificationConsumerService {
 
             log.info("Successfully processed and sent ban email to {}.", notification.getEmail());
 
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            // JSON errors likely won't be fixed by retrying, so we catch and log these to avoid infinite loops.
-            log.error("Fatal error: Could not parse BanNotification JSON: {}", message, e);
-        }
         // Note: EmailSendingException is NOT caught here, so Kafka will retry.
     }
 

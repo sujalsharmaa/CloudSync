@@ -1,5 +1,6 @@
 package com.search_service.search_service.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.search_service.search_service.Model.FileMetadata;
 import com.search_service.search_service.Repository.FileMetadataRepository;
@@ -42,8 +43,7 @@ public class ConsumeFileMetadataService {
      * @param message The JSON string message containing file metadata.
      */
     @KafkaListener(topics = "file-metadata-search", groupId = "rag-pipeline-group")
-    public void listen(String message) {
-        try {
+    public void listen(String message) throws Exception {
             // 1. Deserialize the message into FileMetadata object
             FileMetadata fileMetadata = objectMapper.readValue(message, FileMetadata.class);
             String fileName = fileMetadata.getFileName();
@@ -81,12 +81,6 @@ public class ConsumeFileMetadataService {
             } else {
                 log.warn("Cannot invalidate cache for file {} as userId is missing.", fileName);
             }
-            // ----------------------------------------
 
-        } catch (IOException e) {
-            log.error("Error deserializing message or saving metadata: {}", e.getMessage(), e);
-        } catch (Exception e) {
-            log.error("An unexpected error occurred during metadata processing: {}", e.getMessage(), e);
-        }
     }
 }

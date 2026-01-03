@@ -5,7 +5,8 @@ import com.auth_service.auth_service.Entity.type.User;
 import com.auth_service.auth_service.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.ReflectiveScan;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
@@ -18,6 +19,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final QueueService queueService;
 
+    // Evict the cache when user details are updated so the next read fetches fresh data
+    @CacheEvict(value = "user_email", key = "#oAuth2User.getAttribute('email')")
     public User processOAuth2User(OAuth2User oAuth2User) {
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
@@ -28,27 +31,24 @@ public class UserService {
 
         if (existingUser.isPresent()) {
             User user = existingUser.get();
-            // Update user info
             user.setName(name);
             user.setPicture(picture);
             user.setGoogleId(googleId);
             return userRepository.save(user);
         } else {
-            // Create new user
             User newUser = new User();
             newUser.setEmail(email);
             newUser.setName(name);
             newUser.setPicture(picture);
             newUser.setGoogleId(googleId);
-            WelcomeEmailNotification welcomeEmailNotification = new WelcomeEmailNotification(
-                    email,name
-            );
+            WelcomeEmailNotification welcomeEmailNotification = new WelcomeEmailNotification(email, name);
             queueService.publishWelcomeEmailRequest(welcomeEmailNotification);
             return userRepository.save(newUser);
-
         }
     }
 
+    // Cache the result. The key is the email address.
+    @Cacheable(value = "user_email", key = "#email")
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }

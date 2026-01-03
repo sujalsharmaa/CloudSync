@@ -3,6 +3,8 @@ package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Service;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Dto.S3UploadResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -53,6 +55,7 @@ public class S3Service {
      * @param userId The ID of the user whose storage usage to check.
      * @return The total size in bytes.
      */
+    @Cacheable(value = "storage_usage", key = "#userId")
     public long getUserFolderSize(String userId) {
         long totalSize = 0;
         String prefix = userId + "/";
@@ -87,6 +90,7 @@ public class S3Service {
      * @return S3UploadResult containing the generated URL and file size.
      * @throws IOException
      */
+    @CacheEvict(value = "storage_usage", key = "#key.split('/')[0]")
     public S3UploadResult uploadFile(String key, InputStream inputStream) throws IOException {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)

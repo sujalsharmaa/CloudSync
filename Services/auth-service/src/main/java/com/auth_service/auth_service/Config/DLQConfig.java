@@ -1,6 +1,5 @@
-package com.tags_generation_service.tags_generation_service.config;
+package com.auth_service.auth_service.Config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -10,13 +9,7 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
-public class AppConfig {
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
+public class DLQConfig {
     @Bean
     public CommonErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
         // This automatically sends failed messages to "original-topic.DLT"
