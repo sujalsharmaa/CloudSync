@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Suspension Notice</title>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #f4f7fa; font-family: Arial, sans-serif; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; background-color: #ffffff;
+            border-radius: 12px; border: 1px solid #e0e0e0; }
+        .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid {{headlineColor}}; }
+        .logo { font-size: 28px; font-weight: bold; color: {{headlineColor}}; }
+        h2 { color: {{headlineColor}}; }
+        p { color: #4b5563; line-height: 1.6; }
+        .details-box {
+            background-color: #fef2f2;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed #fca5a5;
+        }
+        .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 20px; }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="logo">CloudSync</div>
+        <p>Policy Enforcement Notification</p>
+    </div>
+
+    <h2>🛑 URGENT: Account Suspension</h2>
+
+    <p>Dear {{displayName}},</p>
+
+    <p>
+        Your CloudSync account has been suspended due to repeated policy violations.
+        This action is effective immediately.
+    </p>
+
+    <div class="details-box">
+        <p><strong>🔴 Status:</strong> Suspended</p>
+        <p><strong>⏳ Duration:</strong> {{banDuration}}</p>
+        <p><strong>📄 Reason:</strong> {{banReason}}</p>
+    </div>
+
+    <p style="font-weight: bold; color: {{headlineColor}}">
+        {{actionText}}
+    </p>
+
+    <p>
+        If you believe this action was taken in error, please reply to this email to appeal.
+    </p>
+
+    <div class="footer">
+        <p>This is an automated notification.</p>
+        <p>© {{year}} CloudSync</p>
+    </div>
+
+</div>
+</body>
+</html>

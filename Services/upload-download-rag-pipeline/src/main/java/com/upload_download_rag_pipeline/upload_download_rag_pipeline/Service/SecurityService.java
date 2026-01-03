@@ -10,11 +10,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
-
+import org.springframework.core.io.Resource;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StreamUtils;
 
 @Slf4j
 @Service
@@ -23,30 +26,35 @@ public class SecurityService {
 
     private final Map<String, ChatLanguageModel> specializedModels;
     private final Tika tika = new Tika();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+    private static final int MAX_CONTENT_LENGTH = 3000;
+    private static final String TRUNCATION_INDICATOR = "...";
 
-    // A strict system prompt is crucial for reliable content moderation
-    private static final String SYSTEM_PROMPT = """
-        You are a content moderation AI. Your sole purpose is to detect and flag any content that is sexually explicit, hateful, violent, illegal, or otherwise harmful.
-        You MUST respond with a specific JSON object containing a 'security_status' and a 'rejection_reason'.
-        If the content is safe, set 'security_status' to 'safe' and 'rejection_reason' to null.
-        If the content is unsafe, set 'security_status' to 'unsafe' and provide a clear, concise 'rejection_reason'.
-        
-        Example unsafe response:
-        {
-          "security_status": "unsafe",
-          "rejection_reason": "Contains sexually explicit material."
-        }
-        
-        Example safe response:
-        {
-          "security_status": "safe",
-          "rejection_reason": null
-        }
-        
-        Do NOT include any other text, explanations, or conversational remarks in your response.
-        """;
+    // Inject prompt from resources
+    @Value("classpath:prompts/security-check.txt")
+    private Resource securityPromptResource;
+    private String systemPrompt;
 
+    private String getSystemPrompt() {
+        if (systemPrompt == null) {
+            try {
+                systemPrompt = StreamUtils.copyToString(
+                        securityPromptResource.getInputStream(),
+                        StandardCharsets.UTF_8
+                );
+            } catch (IOException e) {
+                log.error("Failed to load security prompt", e);
+                throw new RuntimeException("Could not load security prompt", e);
+            }
+        }
+        return systemPrompt;
+    }
+    private String truncateContent(String content) {
+        if (content.length() <= MAX_CONTENT_LENGTH) {
+            return content;
+        }
+        return content.substring(0, MAX_CONTENT_LENGTH) + TRUNCATION_INDICATOR;
+    }
     // Create a POJO to represent the LLM's JSON response
     private static class SecurityResponse {
         public String security_status;
@@ -88,18 +96,16 @@ public class SecurityService {
             return errorResult;
         }
     }
-    private Map<String, Object> analyzeDocumentForSecurity(ChatLanguageModel llm, String content, String fileType) {
-        String truncatedContent = content.length() > 3000 ?
-                content.substring(0, 3000) + "..." : content;
+    private Map<String, Object> analyzeDocumentForSecurity(
+            ChatLanguageModel llm, String content, String fileType) {
 
-        String userPrompt = String.format("""
-            Analyze this %s document for explicit or harmful content.
-            
-            Content:
-            %s
-            """, fileType, truncatedContent);
+        String truncated = truncateContent(content);
+        String userPrompt = String.format(
+                "Analyze this %s document for explicit or harmful content.\n\nContent:\n%s",
+                fileType, truncated
+        );
 
-        String response = llm.generate(SYSTEM_PROMPT + userPrompt);
+        String response = llm.generate(getSystemPrompt() + userPrompt);
         return parseJsonSecurityResponse(response);
     }
 
@@ -108,7 +114,7 @@ public class SecurityService {
         String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
         ImageContent imageContent = ImageContent.from(base64Image, "image/png");
-        TextContent textContent = TextContent.from(SYSTEM_PROMPT + "Analyze the provided image for explicit or harmful content.");
+        TextContent textContent = TextContent.from(getSystemPrompt() + "Analyze the provided image for explicit or harmful content.");
         UserMessage userMessage = UserMessage.from(Arrays.asList(textContent, imageContent));
 
         String response = llm.generate(userMessage).content().text();

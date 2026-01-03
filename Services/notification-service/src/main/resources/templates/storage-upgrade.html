@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Upgrade Success</title>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #f4f7fa; font-family: Arial, sans-serif; }
+        .container {
+            max-width: 600px; margin: 20px auto; padding: 20px;
+            background-color: #ffffff; border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        .header {
+            text-align: center; padding-bottom: 20px;
+            border-bottom: 2px solid #10b981;
+        }
+        .logo { font-size: 28px; font-weight: bold; color: #6366f1; }
+        h2 { color: #1e293b; }
+        p { color: #4b5563; line-height: 1.6; }
+        .summary-table {
+            width: 100%; border-collapse: collapse; margin: 20px 0;
+        }
+        .summary-table th, .summary-table td {
+            padding: 10px; border-bottom: 1px solid #e5e7eb;
+        }
+        .summary-table th { background-color: #f3f4f6; }
+        .highlight { font-weight: bold; color: #10b981; }
+        .cta-button {
+            display: inline-block; padding: 12px 25px;
+            background-color: #10b981; color: #fff;
+            text-decoration: none; border-radius: 8px;
+            margin-top: 20px;
+        }
+        .footer {
+            text-align: center; margin-top: 30px;
+            font-size: 12px; color: #9ca3af;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="logo">CloudSync</div>
+        <p>Secure Cloud Storage, Simplified.</p>
+    </div>
+
+    <h2>🎉 Success, {{displayName}}!</h2>
+
+    <p>Your CloudSync storage plan has been successfully upgraded.</p>
+
+    <h3>📦 Upgrade Summary</h3>
+    <table class="summary-table">
+        <tr>
+            <th>New Plan</th>
+            <td class="highlight">{{newPlan}}</td>
+        </tr>
+        <tr>
+            <th>Total Storage</th>
+            <td class="highlight">{{newStorageGB}} GB</td>
+        </tr>
+        <tr>
+            <th>Upgrade Date</th>
+            <td>{{upgradeDate}}</td>
+        </tr>
+    </table>
+
+    <h3>🚀 What You Get</h3>
+    <ul>
+        <li>{{newStorageGB}} GB secure cloud storage</li>
+        <li>Max single file upload: {{maxFileSize}}</li>
+        <li>Priority support</li>
+        <li>All premium features</li>
+    </ul>
+
+    <a href="[APP_LOGIN_URL]" class="cta-button">Start Uploading Now</a>
+
+    <div class="footer">
+        <p>Thank you for choosing CloudSync.</p>
+        <p>© {{year}} CloudSync</p>
+    </div>
+
+</div>
+</body>
+</html>

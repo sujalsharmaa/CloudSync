@@ -2,42 +2,32 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: search-service-config
+  namespace: default
 data:
-  # I've merged your .properties and .yaml into one clean file
   application.yaml: |
-    
-    management:
-      endpoints:
-        web:
-          exposure:
-            include: health,info,prometheus
-      tracing:
-        sampling:
-          probability: 1.0
-      # REPLACE ZIPKIN CONFIG WITH THIS:
-      otlp:
-        tracing:
-          endpoint: "http://tempo.default.svc.cluster.local:4318/v1/traces"
     server:
       port: 8085
-      
+
     spring:
       application:
         name: search-service
-        
+
+      main:
+        allow-bean-definition-overriding: true
+
       # === Redis ===
       data:
         redis:
           host: redis.default.svc.cluster.local
           port: 6379
-          
+
       # === Security ===
       security:
         oauth2:
           resourceserver:
             jwt:
               issuer-uri: https://accounts.google.com
-              
+
       # === Kafka ===
       kafka:
         bootstrap-servers: kafka-service.default.svc.cluster.local:9092
@@ -49,13 +39,13 @@ data:
           auto-offset-reset: earliest
           key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
           value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-          
+
       # === PostgreSQL ===
       datasource:
         url: jdbc:postgresql://postgres.default.svc.cluster.local:5432/postgres
         driver-class-name: org.postgresql.Driver
-        # username and password will be injected from the Secret
-        
+        # username & password injected from Secret
+
       jpa:
         hibernate:
           ddl-auto: update
@@ -64,18 +54,17 @@ data:
           hibernate:
             format_sql: true
             dialect: org.hibernate.dialect.PostgreSQLDialect
-            
+
       # === Elasticsearch ===
       elasticsearch:
         uris: http://elasticsearch.default.svc.cluster.local:9200
-        # username and password will be injected from the Secret
-        
+        # credentials injected from Secret
+
       # === Spring AI ===
       ai:
-        # api-key will be injected from the Secret
         vectorstore:
           chroma:
-            client-host: 52.23.165.28
+            client-host: chroma.default.svc.cluster.local
             client-port: 8000
             collection-name: drive-documents
         autoconfigure:
@@ -83,17 +72,21 @@ data:
             - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
             - org.springframework.ai.vectorstore.chroma.autoconfigure.ChromaVectorStoreAutoConfiguration
 
+    # === AWS (non-secret only) ===
+    aws:
+      region: us-east-1
+      s3:
+        bucket-name: your-rag-pipeline-bucket
+
     # === App-specific ===
     app:
       jwt:
-        # secret will be injected from the Secret
-        expiration: 86400000 
+        expiration: 86400000
 
-    # === langchain4j ===
+    # === LangChain4j / GenAI ===
     genai:
       provider: gemini
       gemini:
-        # api-key will be injected from the Secret
         model:
           text: gemini-2.0-flash-001
           code: gemini-2.0-flash-001
@@ -101,10 +94,43 @@ data:
           embedding: text-embedding-004
           video: gemini-2.0-flash-001
 
-    # === Logging ===
-    logging:
-      level:
-        org:
-          springframework:
-            security: DEBUG
-            oauth2: DEBUG
+    # === Management & Tracing ===
+    management:
+      endpoints:
+        web:
+          exposure:
+            include:
+              - health
+              - info
+              - metrics
+              - prometheus
+      tracing:
+        sampling:
+          probability: 1.0
+      otlp:
+        tracing:
+          endpoint: http://tempo.default.svc.cluster.local:4318/v1/traces
+
+    # === Swagger ===
+    springdoc:
+      api-docs:
+        path: /v3/api-docs
+        enabled: true
+      swagger-ui:
+        path: /swagger-ui.html
+        enabled: true
+        operationsSorter: method
+        tagsSorter: alpha
+        displayRequestDuration: true
+        filter: true
+      show-actuator: false
+
+    # === App Info ===
+    info:
+      app:
+        name: Search Service
+        description: Searching and filtering files and metadata service for CloudSync
+        version: 1.0.0
+        contact:
+          name: CloudSync Team
+          email: support@cloudsync.com

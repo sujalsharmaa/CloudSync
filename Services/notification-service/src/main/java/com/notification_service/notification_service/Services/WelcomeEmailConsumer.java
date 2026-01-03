@@ -2,161 +2,92 @@ package com.notification_service.notification_service.Services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.notification_service.notification_service.Dto.WelcomeEmailNotification;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.Year;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class WelcomeEmailConsumer {
 
-    // These fields are correctly injected via the @RequiredArgsConstructor constructor
     private final ObjectMapper objectMapper;
     private final MailService mailService;
+
+    @Value("classpath:templates/welcome-email.html")
+    private Resource welcomeEmailTemplate;
+
+    private String htmlTemplate;
+
+    @PostConstruct
+    void loadTemplate() throws Exception {
+        htmlTemplate = StreamUtils.copyToString(
+                welcomeEmailTemplate.getInputStream(),
+                StandardCharsets.UTF_8
+        );
+    }
 
     @KafkaListener(topics = "welcome-email-topic", groupId = "rag-pipeline-group")
     public void consumeWelcomeEmail(String message) {
 
         try {
-            WelcomeEmailNotification notification = objectMapper.readValue(message, WelcomeEmailNotification.class);
-            log.info("Parsed welcome notification for user: {}", notification.getEmail());
+            WelcomeEmailNotification n =
+                    objectMapper.readValue(message, WelcomeEmailNotification.class);
 
-            // Build personalized welcome email
-            String subject = "Welcome to CloudSync! Your Secure Cloud Drive is Ready 🚀";
-            String body = buildWelcomeEmailBody(notification);
+            String subject =
+                    "Welcome to CloudSync! Your Secure Cloud Drive is Ready 🚀";
 
-            // Send email
-            mailService.sendHtmlEmail(notification.getEmail(), subject, body);
-            log.info("Successfully sent welcome email to {}", notification.getEmail());
+            String body = buildEmailBody(n);
+
+            mailService.sendHtmlEmail(n.getEmail(), subject, body);
+
+            log.info("Welcome email sent to {}", n.getEmail());
 
         } catch (Exception e) {
-            log.error("Error processing welcome email notification: {}", message, e);
+            log.error("Failed to process welcome email", e);
         }
     }
 
-    private String buildWelcomeEmailBody(WelcomeEmailNotification notification) {
-        String displayName = notification.getUsername() != null && !notification.getUsername().isBlank()
-                ? notification.getUsername()
-                : notification.getEmail();
+    private String buildEmailBody(WelcomeEmailNotification n) {
 
-        // Format the registration date nicely
-        String registrationDate = new SimpleDateFormat("MMMM dd, yyyy", Locale.US).format(new Date());
+        String displayName =
+                (n.getUsername() != null && !n.getUsername().isBlank())
+                        ? n.getUsername()
+                        : n.getEmail();
 
-        // --- HTML EMAIL BODY START ---
-        return String.format("""
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Welcome to CloudSync</title>
-                <style>
-                    /* Basic reset for better compatibility */
-                    body, table, td, a { -webkit-text-size-adjust: 100%%; -ms-text-size-adjust: 100%%; }
-                    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-                    img { -ms-interpolation-mode: bicubic; }
-                    /* Font import for a clean look */
-                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-                    /* Main styles */
-                    body { margin: 0; padding: 0; background-color: #f4f7fa; font-family: 'Inter', sans-serif; }
-                    .container { max-width: 600px; margin: 20px auto; padding: 20px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e0e0e0;}
-                    .header { text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }
-                    .logo { font-size: 28px; font-weight: 700; color: #1e293b; }
-                    .content h2 { color: #1e293b; font-size: 24px; margin-top: 0; }
-                    .content p { color: #4b5563; line-height: 1.6; margin-bottom: 15px; }
-                    .cta-button { 
-                        display: inline-block; 
-                        padding: 12px 25px; 
-                        margin: 20px 0;
-                        background-color: #6366f1; 
-                        color: #ffffff; 
-                        font-weight: 600; 
-                        text-decoration: none; 
-                        border-radius: 8px;
-                        transition: background-color 0.3s;
-                    }
-                    .details-box { background-color: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #d1d5db; }
-                    .details-box p { margin: 5px 0; font-size: 14px; color: #374151; }
-                    .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af; }
-                    .step { margin-bottom: 10px; font-weight: 600; color: #10b981; }
-                    .step span { color: #4b5563; font-weight: 400; margin-left: 8px; }
+        String registrationDate =
+                new SimpleDateFormat("MMMM dd, yyyy", Locale.US)
+                        .format(new Date());
 
-                    /* Responsive adjustments */
-                    @media only screen and (max-width: 600px) {
-                        .container { width: 100%% !important; border-radius: 0; margin: 0; }
-                        .cta-button { display: block; text-align: center; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div style="background-color: #f4f7fa; padding: 20px 0;">
-                    <div class="container">
-                        <!-- Header -->
-                        <div class="header">
-                            <span class="logo" style="color: #6366f1;">CloudSync</span>
-                            <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0;">Secure Cloud Storage, Simplified.</p>
-                        </div>
+        return applyTemplate(htmlTemplate, Map.of(
+                "displayName", displayName,
+                "username", n.getUsername(),
+                "email", n.getEmail(),
+                "registrationDate", registrationDate,
+                "year", Year.now().getValue()
+        ));
+    }
 
-                        <!-- Content -->
-                        <div class="content" style="padding: 20px 0;">
-                            <h2 style="color: #1e293b; font-size: 24px; margin-top: 0;">🎉 Welcome, %s!</h2>
-                            <p>We're thrilled to have you join our growing community. Your account has been successfully created, and you're all set to start storing, sharing, and managing your files securely.</p>
-                            
-                            <!-- Account Details -->
-                            <div class="details-box">
-                                <p><strong>👤 Account:</strong> %s</p>
-                                <p><strong>📧 Email:</strong> %s</p>
-                                <p><strong>💾 Plan:</strong> Free (1 GB)</p>
-                                <p><strong>🗓️ Registered:</strong> %s</p>
-                            </div>
-
-                            <h3 style="color: #1e293b; font-size: 18px; margin-top: 25px; margin-bottom: 15px;">🚀 Your First Steps</h3>
-                            <div style="margin-bottom: 20px;">
-                                <p class="step">1. <span style="color: #4b5563; font-weight: 400;">Log in and access your new drive.</span></p>
-                                <p class="step">2. <span style="color: #4b5563; font-weight: 400;">Upload your first file and experience seamless storage.</span></p>
-                                <p class="step">3. <span style="color: #4b5563; font-weight: 400;">Organize files using our powerful tags and search features.</span></p>
-                            </div>
-
-                            <!-- CTA Button -->
-                            <a href="[https://drive.sujalsharma.in]" class="cta-button">
-                                Go to My Drive Now
-                            </a>
-
-                            <h3 style="color: #1e293b; font-size: 18px; margin-top: 25px; margin-bottom: 15px;">✨ Upgrade for Premium Features</h3>
-                            <p>Need more than 1 GB? Upgrade today to unlock:</p>
-                            <ul style="color: #4b5563; padding-left: 20px;">
-                                <li>Up to 5 TB of storage</li>
-                                <li>Advanced security and encryption</li>
-                                <li>Priority 24/7 support</li>
-                                <li>Team collaboration features</li>
-                            </ul>
-                            
-                            <p>Thank you for choosing CloudSync! Let's make cloud storage simple together.</p>
-
-                        </div>
-
-                        <!-- Footer -->
-                        <div class="footer">
-                            <p>Need help? Visit our <a href="[Your Help Center URL]" style="color: #6366f1; text-decoration: none;">Help Center</a> or reply to this email.</p>
-                            <p>&copy; %d CloudSync. All rights reserved.</p>
-                        </div>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """,
-                displayName, // H2 Welcome, %s!
-                notification.getUsername(),
-                notification.getEmail(),
-                registrationDate,
-                java.time.Year.now().getValue()
-        );
-        // --- HTML EMAIL BODY END ---
+    private String applyTemplate(String template, Map<String, Object> values) {
+        String result = template;
+        for (var entry : values.entrySet()) {
+            result = result.replace(
+                    "{{" + entry.getKey() + "}}",
+                    String.valueOf(entry.getValue())
+            );
+        }
+        return result;
     }
 }

@@ -2,33 +2,27 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: auth-service-config
+  namespace: default
 data:
-  # This key (application.yaml) will be mounted as a file
   application.yaml: |
-    management:
-      endpoints:
-        web:
-          exposure:
-            include: health,info,prometheus
-      tracing:
-        sampling:
-          probability: 1.0
-      # REPLACE ZIPKIN CONFIG WITH THIS:
-      otlp:
-        tracing:
-          endpoint: "http://tempo.default.svc.cluster.local:4318/v1/traces"
     server:
       port: 8080
+
     spring:
       main:
         allow-bean-definition-overriding: true
-      # Database configuration
+
       datasource:
         url: jdbc:postgresql://postgres.default.svc.cluster.local:5432/postgres
         driver-class-name: org.postgresql.Driver
-        # Username and password will be injected from a Secret
+        # username & password come from Secret
+
+      data:
+        redis:
+          host: redis.default.svc.cluster.local
+          port: 6379
+
       kafka:
-        # UPDATED to use the internal Kafka service name
         bootstrap-servers: kafka-service.default.svc.cluster.local:9092
         producer:
           key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -37,30 +31,76 @@ data:
           group-id: rag-pipeline-group
           auto-offset-reset: earliest
           key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-          value-serializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
       jpa:
         database-platform: org.hibernate.dialect.PostgreSQLDialect
         hibernate:
           ddl-auto: update
         show-sql: true
-      # Google OAuth2 Client configuration
+
       security:
         oauth2:
           client:
             registration:
               google:
-                # Client ID and Secret will be injected from a Secret
-                redirect-uri: "https://auth.sujalsharma.in/login/oauth2/code/google"
+                redirect-uri: https://auth.sujalsharma.in/login/oauth2/code/google
                 scope:
                   - openid
                   - profile
                   - email
+
       h2:
         console:
           enabled: true
+
+    aws:
+      region: us-east-1
+      s3:
+        bucket-name: rag-pipeline-bucket
+
     app:
       jwt:
-        # JWT Secret will be injected from a Secret
-        expiration: 86400000 # 24 hours
+        expiration: 86400000
       frontend:
         url: https://drive.sujalsharma.in
+
+    management:
+      endpoints:
+        web:
+          exposure:
+            include:
+              - health
+              - info
+              - metrics
+              - prometheus
+
+      tracing:
+        sampling:
+          probability: 1.0
+
+      otlp:
+        tracing:
+          endpoint: http://tempo.default.svc.cluster.local:4318/v1/traces
+
+    springdoc:
+      api-docs:
+        path: /v3/api-docs
+        enabled: true
+      swagger-ui:
+        path: /swagger-ui.html
+        enabled: true
+        operationsSorter: method
+        tagsSorter: alpha
+        displayRequestDuration: true
+        filter: true
+      show-actuator: false
+
+    info:
+      app:
+        name: Auth Service
+        description: Authentication and authorization service for CloudSync
+        version: 1.0.0
+        contact:
+          name: CloudSync Team
+          email: support@cloudsync.com

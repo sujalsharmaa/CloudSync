@@ -1,25 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  # I've named this 'file-service' based on the configuration
   name: file-service-config
+  namespace: default
 data:
-  # Merged .properties and .yaml into one file
   application.yaml: |
-    
-    management:
-      endpoints:
-        web:
-          exposure:
-            include: health,info,prometheus
-      tracing:
-        sampling:
-          probability: 1.0
-      # REPLACE ZIPKIN CONFIG WITH THIS:
-      otlp:
-        tracing:
-          endpoint: "http://tempo.default.svc.cluster.local:4318/v1/traces"
-    authServiceUrl: https://auth.sujalsharma.in/api/auth/getStoragePlan/{id}
     server:
       port: 8083
       reactive:
@@ -29,19 +14,21 @@ data:
         max-header-size: 32768
         max-chunk-size: 1048576
 
+    authServiceUrl: https://auth.sujalsharma.in/api/auth/getStoragePlan/{id}
+
     spring:
-      # Assuming a name for this service
       application:
         name: file-service
-        
+
       main:
         web-application-type: reactive
-        
+        allow-bean-definition-overriding: true
+
       servlet:
         multipart:
           max-file-size: 2GB
           max-request-size: 2GB
-          
+
       codec:
         max-in-memory-size: 16MB
 
@@ -50,14 +37,14 @@ data:
         redis:
           host: redis.default.svc.cluster.local
           port: 6379
-          
+
       # === Security ===
       security:
         oauth2:
           resourceserver:
             jwt:
               issuer-uri: https://accounts.google.com
-              
+
       # === Kafka ===
       kafka:
         bootstrap-servers: kafka-service.default.svc.cluster.local:9092
@@ -69,13 +56,13 @@ data:
           auto-offset-reset: earliest
           key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
           value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-          
+
       # === PostgreSQL ===
       datasource:
         url: jdbc:postgresql://postgres.default.svc.cluster.local:5432/postgres
         driver-class-name: org.postgresql.Driver
-        # username and password will be injected from the Secret
-        
+        # credentials from Secret
+
       jpa:
         hibernate:
           ddl-auto: update
@@ -84,18 +71,17 @@ data:
           hibernate:
             format_sql: true
             dialect: org.hibernate.dialect.PostgreSQLDialect
-            
+
       # === Elasticsearch ===
       elasticsearch:
         uris: http://elasticsearch.default.svc.cluster.local:9200
-        # username and password will be injected from the Secret
-        
+        # credentials from Secret
+
       # === Spring AI ===
       ai:
-        # api-key will be injected from the Secret
         vectorstore:
           chroma:
-            client-host: 52.23.165.28
+            client-host: chroma.default.svc.cluster.local
             client-port: 8000
             collection-name: drive-documents
         autoconfigure:
@@ -103,17 +89,21 @@ data:
             - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
             - org.springframework.ai.vectorstore.chroma.autoconfigure.ChromaVectorStoreAutoConfiguration
 
-    # === App-specific ===
+    # === AWS (NON-SECRET ONLY) ===
+    aws:
+      region: us-east-1
+      s3:
+        bucket-name: your-rag-pipeline-bucket
+
+    # === JWT ===
     app:
       jwt:
-        # secret will be injected from the Secret
-        expiration: 86400000 
+        expiration: 86400000
 
-    # === langchain4j ===
+    # === GenAI / LangChain4j ===
     genai:
       provider: gemini
       gemini:
-        # api-key will be injected from the Secret
         model:
           text: gemini-2.0-flash-001
           code: gemini-2.0-flash-001
@@ -121,10 +111,94 @@ data:
           embedding: text-embedding-004
           video: gemini-2.0-flash-001
 
-    # === Logging ===
-    logging:
-      level:
-        org:
-          springframework:
-            security: DEBUG
-            oauth2: DEBUG
+    # === Resilience4j ===
+    resilience4j:
+      circuitbreaker:
+        instances:
+          authService:
+            registerHealthIndicator: true
+            slidingWindowSize: 20
+            minimumNumberOfCalls: 10
+            permittedNumberOfCallsInHalfOpenState: 3
+            automaticTransitionFromOpenToHalfOpenEnabled: true
+            waitDurationInOpenState: 10s
+            failureRateThreshold: 50
+            recordExceptions:
+              - java.net.ConnectException
+              - java.net.SocketTimeoutException
+              - org.springframework.web.client.ResourceAccessException
+              - org.springframework.web.client.HttpServerErrorException
+
+    # === Ban Rules ===
+    ban:
+      redis:
+        violation-key-prefix: "user:violation_count:"
+        ban-key-prefix: "user:banned:"
+        lifetime-value: "LIFETIME"
+
+      rules:
+        - count: 3
+          duration: "24 hours"
+          ttl: 24h
+          reason: "File policy violation count reached 3."
+
+        - count: 10
+          duration: "1 month"
+          ttl: 30d
+          reason: "File policy violation count reached 10."
+
+        - count: 20
+          duration: "3 months"
+          ttl: 90d
+          reason: "File policy violation count reached 20."
+
+        - count: 25
+          duration: "LIFETIME"
+          ttl: null
+          lifetime: true
+          reason: "File policy violation count reached 25. Account permanently banned."
+
+    # === Management & Tracing ===
+    management:
+      health:
+        circuitbreakers:
+          enabled: true
+      endpoints:
+        web:
+          exposure:
+            include:
+              - health
+              - info
+              - metrics
+              - prometheus
+              - circuitbreakers
+      tracing:
+        sampling:
+          probability: 1.0
+      otlp:
+        tracing:
+          endpoint: http://tempo.default.svc.cluster.local:4318/v1/traces
+
+    # === Swagger ===
+    springdoc:
+      api-docs:
+        path: /v3/api-docs
+        enabled: true
+      swagger-ui:
+        path: /swagger-ui.html
+        enabled: true
+        operationsSorter: method
+        tagsSorter: alpha
+        displayRequestDuration: true
+        filter: true
+      show-actuator: false
+
+    # === App Info ===
+    info:
+      app:
+        name: Upload / File Service
+        description: Uploading files and enforcing storage & security policies for CloudSync
+        version: 1.0.0
+        contact:
+          name: CloudSync Team
+          email: support@cloudsync.com

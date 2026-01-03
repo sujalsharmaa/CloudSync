@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to CloudSync</title>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #f4f7fa; font-family: Arial, sans-serif; }
+        .container {
+            max-width: 600px; margin: 20px auto; padding: 20px;
+            background-color: #ffffff; border-radius: 12px;
+            border: 1px solid #e0e0e0;
+        }
+        .header {
+            text-align: center; padding-bottom: 20px;
+            border-bottom: 2px solid #6366f1;
+        }
+        .logo { font-size: 28px; font-weight: bold; color: #6366f1; }
+        h2 { color: #1e293b; }
+        p { color: #4b5563; line-height: 1.6; }
+        .details-box {
+            background-color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed #d1d5db;
+        }
+        .step { font-weight: bold; color: #10b981; margin-bottom: 6px; }
+        .cta-button {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #6366f1;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="logo">CloudSync</div>
+        <p>Secure Cloud Storage, Simplified.</p>
+    </div>
+
+    <h2>🎉 Welcome, {{displayName}}!</h2>
+
+    <p>
+        We're thrilled to have you on board. Your CloudSync account has been
+        successfully created and is ready to use.
+    </p>
+
+    <div class="details-box">
+        <p><strong>👤 Account:</strong> {{username}}</p>
+        <p><strong>📧 Email:</strong> {{email}}</p>
+        <p><strong>💾 Plan:</strong> Free (1 GB)</p>
+        <p><strong>🗓️ Registered:</strong> {{registrationDate}}</p>
+    </div>
+
+    <h3>🚀 Your First Steps</h3>
+    <p class="step">1. Log in and access your drive</p>
+    <p class="step">2. Upload your first file</p>
+    <p class="step">3. Organize files with tags and search</p>
+
+    <a href="https://drive.sujalsharma.in" class="cta-button">
+        Go to My Drive
+    </a>
+
+    <h3>✨ Upgrade Anytime</h3>
+    <ul>
+        <li>Up to 5 TB storage</li>
+        <li>Advanced encryption</li>
+        <li>24/7 priority support</li>
+        <li>Team collaboration</li>
+    </ul>
+
+    <div class="footer">
+        <p>Need help? Reply to this email anytime.</p>
+        <p>© {{year}} CloudSync</p>
+    </div>
+
+</div>
+</body>
+</html>

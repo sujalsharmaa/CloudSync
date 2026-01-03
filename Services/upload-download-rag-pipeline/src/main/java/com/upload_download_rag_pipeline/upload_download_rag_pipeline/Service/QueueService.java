@@ -3,9 +3,9 @@ package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Dto.BanNotification;
-import com.upload_download_rag_pipeline.upload_download_rag_pipeline.Model.FileMetadataPostgres;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,38 +14,40 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class QueueService {
 
-    // Ensure your Kafka configuration is set up to handle String keys and String values
     private final KafkaTemplate<String, String> kafkaTemplate;
-    // Use ObjectMapper to serialize Java objects to JSON strings
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper; // Spring usually provides a configured bean
 
-    private final String metadataTopic = "file-metadata-requests";
-    private final String notificationTopic = "notification-topic";
+    @Value("${kafka.topics.metadata:file-metadata-requests}")
+    private String metadataTopic;
+
+    @Value("${kafka.topics.notification:notification-topic}")
+    private String notificationTopic;
 
     /**
      * Publishes a message to a Kafka topic to trigger asynchronous metadata processing.
-     * The message contains a JSON string with the file details.
      */
-    public void publishMetadataRequest(String fileName, String fileType, String s3Location, String userId,long fileSize,String email) {
-        // NOTE: The log message was slightly off; fixed it below.
-        String message = String.format("{\"fileName\":\"%s\", \"fileType\":\"%s\", \"s3Location\":\"%s\", \"userId\":\"%s\",\"fileSize\":%d,\"email\":\"%s\"}",
-                fileName, fileType, s3Location, userId, fileSize, email);
-        log.info("Published metadata request for file: {}", fileName);
-        kafkaTemplate.send(metadataTopic, message);
+    public void publishMetadataRequest(String fileName, String fileType, String s3Location, String userId, long fileSize, String email) {
+        MetadataRequest request = new MetadataRequest(fileName, fileType, s3Location, userId, fileSize, email);
+        publishToTopic(metadataTopic, request, "metadata request");
     }
-
 
     /**
-     * Publishes a BanNotification object to Kafka by serializing it to a JSON string.
+     * Publishes a BanNotification object to Kafka.
      */
-    public void publishBanNotification(BanNotification banNotification){
+    public void publishBanNotification(BanNotification banNotification) {
+        publishToTopic(notificationTopic, banNotification, "ban notification");
+    }
+
+    private void publishToTopic(String topic, Object payload, String logDescription) {
         try {
-            String jsonMessage = objectMapper.writeValueAsString(banNotification);
-            log.warn("Published ban notification to Kafka for user banned: {}", banNotification.getEmail());
-            kafkaTemplate.send(notificationTopic, jsonMessage);
+            String jsonMessage = objectMapper.writeValueAsString(payload);
+            log.info("Publishing {} to topic '{}': {}", logDescription, topic, payload);
+            kafkaTemplate.send(topic, jsonMessage);
         } catch (JsonProcessingException e) {
-            log.error("Failed to serialize BanNotification object: {}", banNotification.getEmail(), e);
-            // Handle serialization error appropriately (e.g., retry or log)
+            log.error("Failed to serialize payload for {}: {}", logDescription, payload, e);
         }
     }
+
+    // Internal record to represent the JSON structure cleanly
+    private record MetadataRequest(String fileName, String fileType, String s3Location, String userId, long fileSize, String email) {}
 }

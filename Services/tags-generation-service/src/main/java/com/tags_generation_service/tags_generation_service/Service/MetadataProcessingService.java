@@ -8,8 +8,14 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
+
+import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Slf4j
@@ -22,160 +28,170 @@ public class MetadataProcessingService {
     private final S3Service s3Service;
     private final PostgresService postgresService;
     private final QueueService queueService;
+    private final FileMetadataPostgresRepository repository;
+
+    private static final int MAX_CONTENT_LENGTH = 3000;
+    private static final String TRUNCATION_INDICATOR = "...";
+
     private final Tika tika = new Tika();
-    private final FileMetadataPostgresRepository fileMetadataPostgresRepository;
 
-    /**
-     * This method would be triggered by a message queue listener.
-     */
-    public void processMetadataRequest(String fileName, String fileType, String s3Location, String userId, Long fileSize,String email) {
+    @Value("classpath:prompts/metadata-analysis-text.txt")
+    private Resource textPromptResource;
+
+    @Value("classpath:prompts/metadata-analysis-image.txt")
+    private Resource imagePromptResource;
+
+    private String systemPromptText;
+    private String systemPromptImage;
+
+    /* -------------------- INIT -------------------- */
+
+    @PostConstruct
+    void loadPrompts() {
         try {
-            log.info("Processing metadata for file: {} from S3 location: {}", fileName, s3Location);
+            systemPromptText = StreamUtils.copyToString(
+                    textPromptResource.getInputStream(), StandardCharsets.UTF_8);
 
-            InputStream fileStream = s3Service.downloadFile(s3Location);
-
-            String content = "";
-            Map<String, Object> analysis;
-            ChatLanguageModel llm = selectSpecializedLLM(fileType);
-
-            if ("image".equals(fileType)) {
-                analysis = analyzeImage(llm, fileStream);
-            } else {
-                content = extractContent(fileStream);
-                analysis = analyzeDocument(llm, content, fileType);
-            }
-
-            // 1. Extract analysis results
-            List<String> tags = (List<String>) analysis.get("tags");
-            List<String> categories = (List<String>) analysis.get("categories");
-            String summary = (String) analysis.get("summary");
-
-            // --- Core Fix Starts Here ---
-
-            FileMetadataPostgres postgresMetadata;
-            Optional<FileMetadataPostgres> existingFile = Optional.ofNullable(fileMetadataPostgresRepository.findByFileName(fileName));
-
-            if (existingFile.isPresent()) {
-                // Update existing file
-                postgresMetadata = existingFile.get();
-
-                // Update fields
-                postgresMetadata.setS3Location(s3Location);
-                postgresMetadata.setModifiedAt(new Date());
-                postgresMetadata.setTags(tags);          // Use the List<String> directly
-                postgresMetadata.setCategories(categories); // Use the List<String> directly
-                postgresMetadata.setSummary(summary);
-                postgresMetadata.setFileSize(fileSize);
-
-                // 3. Save the actual object, not the Optional
-                postgresService.saveOrUpdateMetadata(postgresMetadata);
-
-                // 4. CQRS - Publish the actual object
-                queueService.publishFileRequest(postgresMetadata);
-
-            } else {
-                // Create new file
-                // 2. CONVERT FileMetadata to FileMetadataPostgres for the database
-
-                postgresMetadata = FileMetadataPostgres.builder()
-                        .fileName(fileName)
-                        .fileType(fileType)
-                        .tags(tags) // Use the List<String> directly
-                        .categories(categories) // Use the List<String> directly
-                        .summary(summary)
-                        .s3Location(s3Location)
-                        .processedAt(new Date())
-                        .userId(userId)
-                        .isMovedToRecycleBin(false)
-                        .isStarred(false) // Initialize isStarred to false
-                        .fileSize(fileSize)
-                        .email(email)
-                        .build();
-
-                postgresService.saveOrUpdateMetadata(postgresMetadata);
-                // 4. CQRS - Publish the actual object
-                queueService.publishFileRequest(postgresMetadata);
-            }
-
-            log.info("Metadata for file {} saved successfully to PostgreSQL and Elasticsearch.", fileName);
+            systemPromptImage = StreamUtils.copyToString(
+                    imagePromptResource.getInputStream(), StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            log.error("Error processing metadata for file: {}", fileName, e);
-            // Implement robust error handling (e.g., dead-letter queue)
+            throw new IllegalStateException("Failed to load LLM prompts", e);
         }
     }
 
-    // All the private LLM analysis methods are moved here
+    /* -------------------- PUBLIC API -------------------- */
+
+    public void processMetadataRequest(
+            String fileName,
+            String fileType,
+            String s3Location,
+            String userId,
+            Long fileSize,
+            String email
+    ) {
+        try (InputStream fileStream = s3Service.downloadFile(s3Location)) {
+
+            ChatLanguageModel llm = selectLLM(fileType);
+            Map<String, Object> analysis;
+
+            if ("image".equalsIgnoreCase(fileType)) {
+                analysis = analyzeImage(llm, fileStream);
+            } else {
+                String content = extractContent(fileStream);
+                analysis = analyzeDocument(llm, content, fileType);
+            }
+
+            saveMetadata(fileName, fileType, s3Location, userId, fileSize, email, analysis);
+
+        } catch (Exception e) {
+            log.error("Metadata processing failed for file {}", fileName, e);
+        }
+    }
+
+    /* -------------------- CORE LOGIC -------------------- */
+
+    private void saveMetadata(
+            String fileName,
+            String fileType,
+            String s3Location,
+            String userId,
+            Long fileSize,
+            String email,
+            Map<String, Object> analysis
+    ) {
+        List<String> tags = safeList(analysis.get("tags"));
+        List<String> categories = safeList(analysis.get("categories"));
+        String summary = Objects.toString(analysis.get("summary"));
+
+        FileMetadataPostgres metadata =
+                Optional.ofNullable(repository.findByFileName(fileName))
+                        .map(existing -> {
+                            existing.setTags(tags);
+                            existing.setCategories(categories);
+                            existing.setSummary(summary);
+                            existing.setFileSize(fileSize);
+                            existing.setModifiedAt(new Date());
+                            existing.setS3Location(s3Location);
+                            return existing;
+                        })
+                        .orElse(FileMetadataPostgres.builder()
+                                .fileName(fileName)
+                                .fileType(fileType)
+                                .tags(tags)
+                                .categories(categories)
+                                .summary(summary)
+                                .s3Location(s3Location)
+                                .userId(userId)
+                                .email(email)
+                                .fileSize(fileSize)
+                                .processedAt(new Date())
+                                .isStarred(false)
+                                .isMovedToRecycleBin(false)
+                                .build());
+
+        postgresService.saveOrUpdateMetadata(metadata);
+        queueService.publishFileRequest(metadata);
+    }
+
+    /* -------------------- LLM -------------------- */
+
+    private Map<String, Object> analyzeDocument(ChatLanguageModel llm, String content, String fileType) {
+        String truncated = truncate(content);
+        String prompt = String.format(systemPromptText, fileType, truncated);
+        return parseResponse(llm.generate(prompt));
+    }
+
+    private Map<String, Object> analyzeImage(ChatLanguageModel llm, InputStream stream) throws Exception {
+        byte[] bytes = stream.readAllBytes();
+        String base64 = Base64.getEncoder().encodeToString(bytes);
+
+        UserMessage message = UserMessage.from(
+                ImageContent.from(base64, "image/*"),
+                TextContent.from(systemPromptImage)
+        );
+
+        return parseResponse(llm.generate(message).content().text());
+    }
+
+    /* -------------------- HELPERS -------------------- */
+
+    private ChatLanguageModel selectLLM(String fileType) {
+        return Optional.ofNullable(specializedModels.get(fileType))
+                .orElseGet(() -> specializedModels.get("default"));
+    }
+
     private String extractContent(InputStream stream) throws Exception {
         return tika.parseToString(stream);
     }
 
-    private ChatLanguageModel selectSpecializedLLM(String fileType) {
-        return specializedModels.getOrDefault(fileType, specializedModels.get("default"));
+    private String truncate(String content) {
+        return content.length() <= MAX_CONTENT_LENGTH
+                ? content
+                : content.substring(0, MAX_CONTENT_LENGTH) + TRUNCATION_INDICATOR;
     }
 
-    private Map<String, Object> analyzeDocument(ChatLanguageModel llm, String content, String fileType) {
-        // Your existing logic for tags, categories, and summary
-        String truncatedContent = content.length() > 3000 ?
-                content.substring(0, 3000) + "..." : content;
-
-        String prompt = String.format("""
-            Analyze this %s document and provide:
-            1. 5-10 relevant tags (keywords)
-            2. 1-3 categories (broad classification)
-            3. A brief summary (2-3 sentences)
-            
-            Content:
-            %s
-
-            Format your response as:
-            TAGS: tag1, tag2, tag3...
-            CATEGORIES: category1, category2...
-            SUMMARY: Your summary here
-            """, fileType, truncatedContent);
-
-        String response = llm.generate(prompt);
-        return parseAnalysisResponse(response);
-    }
-
-    private Map<String, Object> analyzeImage(ChatLanguageModel llm, InputStream imageStream) throws Exception {
-        // Your existing logic for tags, categories, and summary
-        byte[] imageBytes = imageStream.readAllBytes();
-        String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-
-        ImageContent imageContent = ImageContent.from(base64Image, "image/png");
-
-        List<Content> contents = new ArrayList<>();
-        contents.add(imageContent);
-        contents.add(TextContent.from("Analyze the provided image and describe its contents. Then provide: " +
-                "1. 2-5 relevant tags (keywords), " +
-                "2. 1-3 categories (broad classification), " +
-                "3. A brief summary (2-3 sentences). " +
-                "Format your response as: TAGS: ..., CATEGORIES: ..., SUMMARY: ..."));
-        UserMessage userMessage = UserMessage.from(contents);
-
-        String response = llm.generate(userMessage).content().text();
-        return parseAnalysisResponse(response);
-    }
-
-    private Map<String, Object> parseAnalysisResponse(String response) {
-        // Your existing parsing logic for tags, categories, and summary
+    private Map<String, Object> parseResponse(String response) {
         Map<String, Object> result = new HashMap<>();
-        String[] lines = response.split("\n");
-        for (String line : lines) {
-            if (line.startsWith("TAGS:")) {
-                String tags = line.substring(5).trim();
-                result.put("tags", Arrays.asList(tags.split(",\\s*")));
-            } else if (line.startsWith("CATEGORIES:")) {
-                String categories = line.substring(11).trim();
-                result.put("categories", Arrays.asList(categories.split(",\\s*")));
-            } else if (line.startsWith("SUMMARY:")) {
+
+        for (String line : response.split("\n")) {
+            if (line.startsWith("TAGS:"))
+                result.put("tags", Arrays.asList(line.substring(5).split(",\\s*")));
+            else if (line.startsWith("CATEGORIES:"))
+                result.put("categories", Arrays.asList(line.substring(11).split(",\\s*")));
+            else if (line.startsWith("SUMMARY:"))
                 result.put("summary", line.substring(8).trim());
-            }
         }
+
         result.putIfAbsent("tags", List.of("untagged"));
         result.putIfAbsent("categories", List.of("uncategorized"));
         result.putIfAbsent("summary", "No summary available");
+
         return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> safeList(Object value) {
+        return value instanceof List ? (List<String>) value : List.of();
     }
 }
