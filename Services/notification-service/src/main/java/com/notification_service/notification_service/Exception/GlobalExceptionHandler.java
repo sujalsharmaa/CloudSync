@@ -14,18 +14,12 @@ import org.springframework.web.context.request.WebRequest;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-/**
- * Global Exception Handler for all microservices
- * Provides consistent error responses across the application
- */
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * Handle Email Sending Exceptions
-     * Maps to HTTP 500 Internal Server Error
-     */
+
     @ExceptionHandler(EmailSendingException.class)
     public ResponseEntity<ErrorResponse> handleEmailSendingException(
             EmailSendingException ex,
@@ -44,9 +38,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    /**
-     * Handle all other exceptions
-     */
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex,
@@ -66,9 +58,6 @@ public class GlobalExceptionHandler {
     }
 }
 
-/**
- * Standard error response structure
- */
 @Data
 @Builder
 @NoArgsConstructor

@@ -41,30 +41,26 @@ public class S3Service {
 
     public InputStream downloadFile(String s3Location) {
 
-        // 1. Build the expected URL prefix for your bucket (e.g., "https://your-bucket.s3.us-east-1.amazonaws.com/")
+
         String regionId = s3Client.serviceClientConfiguration().region().id();
         String urlPrefix = String.format("https://%s.s3.%s.amazonaws.com/", bucketName, regionId);
 
         String key;
 
         if (s3Location.startsWith(urlPrefix)) {
-            // 2. FIX: Extract the full S3 key, which is the path starting right after the URL prefix.
-            // For URL "https://.../1/images (1).jpg", this extracts "1/images (1).jpg"
             key = s3Location.substring(urlPrefix.length());
         } else {
-            // Fallback: Assume s3Location is already the raw key if the prefix doesn't match
             log.warn("S3 location does not start with expected URL prefix ({}). Assuming raw S3 key.", urlPrefix);
             key = s3Location;
         }
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
-                .key(key) // Use the correctly extracted key (e.g., "1/images (1).jpg")
+                .key(key)
                 .build();
 
         log.info("Attempting to download file from S3 using key: {}", key);
 
-        // This line will now use the correct key, which should resolve the 404 error
         return s3Client.getObject(getObjectRequest);
     }
 
@@ -79,7 +75,6 @@ public class S3Service {
         s3Client.putObject(putObjectRequest, RequestBody.fromBytes(fileBytes));
         log.info("Successfully uploaded file {} to S3 bucket {}", key, bucketName);
 
-        // Ensure the returned URL uses the configured region dynamically
         return String.format("https://%s.s3.%s.amazonaws.com/%s",
                 bucketName, s3Client.serviceClientConfiguration().region().id(), key);
     }
@@ -94,10 +89,7 @@ public class S3Service {
         log.info("Downloading file from S3: {}", key);
         return s3Client.getObject(getObjectRequest);
     }
-    /**
-     * Deletes multiple files from the S3 bucket.
-     * @param keys The list of object keys (file names) to delete.
-     */
+
     public void deleteFiles(List<String> keys) {
         try {
             List<ObjectIdentifier> objects = keys.stream()

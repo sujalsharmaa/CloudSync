@@ -37,22 +37,19 @@ class RedisBanServiceTest {
 
     @BeforeEach
     void setUp() {
-        // BEST PRACTICE: Use lenient() for setup that is used by MOST but not ALL tests.
-        // This prevents UnnecessaryStubbingException in the 'isUserBanned' tests.
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
     @Test
     void incrementViolationAndCheckBan_FirstViolation_ShouldNotBan() {
-        // Arrange
+
         String userId = "user123";
         String email = "test@example.com";
         when(valueOperations.increment(anyString())).thenReturn(1L);
 
-        // Act
         long count = redisBanService.incrementViolationAndCheckBan(userId, email);
 
-        // Assert
+
         assertEquals(1L, count);
         verify(valueOperations, never()).set(contains("banned"), anyString(), any(Duration.class));
         verify(queueService, never()).publishBanNotification(any());

@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class QueueService {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ObjectMapper objectMapper; // Spring usually provides a configured bean
+    private final ObjectMapper objectMapper;
 
     @Value("${kafka.topics.metadata:file-metadata-requests}")
     private String metadataTopic;
@@ -23,17 +23,11 @@ public class QueueService {
     @Value("${kafka.topics.notification:notification-topic}")
     private String notificationTopic;
 
-    /**
-     * Publishes a message to a Kafka topic to trigger asynchronous metadata processing.
-     */
     public void publishMetadataRequest(String fileName, String fileType, String s3Location, String userId, long fileSize, String email) {
         MetadataRequest request = new MetadataRequest(fileName, fileType, s3Location, userId, fileSize, email);
         publishToTopic(metadataTopic, request, "metadata request");
     }
 
-    /**
-     * Publishes a BanNotification object to Kafka.
-     */
     public void publishBanNotification(BanNotification banNotification) {
         publishToTopic(notificationTopic, banNotification, "ban notification");
     }
@@ -48,6 +42,5 @@ public class QueueService {
         }
     }
 
-    // Internal record to represent the JSON structure cleanly
     private record MetadataRequest(String fileName, String fileType, String s3Location, String userId, long fileSize, String email) {}
 }

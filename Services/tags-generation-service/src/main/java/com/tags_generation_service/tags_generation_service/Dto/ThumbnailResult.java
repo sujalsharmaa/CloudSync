@@ -1,6 +1,5 @@
 package com.tags_generation_service.tags_generation_service.Dto;
 
-// tags-generation-service/Dto/ThumbnailResult.java
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

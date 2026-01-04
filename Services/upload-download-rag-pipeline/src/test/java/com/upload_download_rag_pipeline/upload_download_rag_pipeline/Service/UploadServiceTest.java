@@ -19,9 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClient;
-
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -62,10 +60,8 @@ class UploadServiceTest {
         lenient().when(mockJwt.getSubject()).thenReturn(userEmail);
         lenient().when(mockJwt.getTokenValue()).thenReturn("dummy-token");
 
-        // Inject config value
         ReflectionTestUtils.setField(uploadService, "authServiceUrl", "http://auth-service");
 
-        // Mock CircuitBreaker behavior to execute the supplier immediately
         lenient().when(circuitBreakerRegistry.circuitBreaker(anyString())).thenReturn(circuitBreaker);
         lenient().when(circuitBreaker.decorateSupplier(any(Supplier.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(circuitBreaker.executeSupplier(any(Supplier.class))).thenAnswer(invocation -> ((Supplier<?>) invocation.getArgument(0)).get());
@@ -79,20 +75,14 @@ class UploadServiceTest {
         lenient().when(responseSpec.body(Plan.class)).thenReturn(plan);
     }
 
-    /**
-     * Test Case UP-01: Upload Safe File Within Quota
-     */
     @Test
     void processFile_ShouldUpload_WhenSafeAndWithinQuota() throws Exception {
         // Arrange
         String fileName = "test-document.pdf";
-        // Use realistic PDF header bytes to ensure Tika doesn't default to text
         byte[] pdfHeader = new byte[] {0x25, 0x50, 0x44, 0x46, 0x2D};
         InputStream fileStream = new ByteArrayInputStream(pdfHeader);
 
         when(redisBanService.isUserBanned(userId)).thenReturn(false);
-
-        // Use anyString() for fileType to be robust against Tika changes
         when(securityService.checkFileSecurity(any(), anyString(), anyString()))
                 .thenReturn(Map.of("security_status", "safe", "rejection_reason", "none"));
 
@@ -112,12 +102,7 @@ class UploadServiceTest {
         verify(s3Service).uploadFile(contains(userId + "/" + fileName), any());
     }
 
-    /**
-     * Test Case UP-02: Block Upload Exceeding Plan Quota
-     */
-    /**
-     * Test Case UP-02: Block Upload Exceeding Plan Quota
-     */
+
     @Test
     void processFile_ShouldReject_WhenQuotaExceeded() throws Exception {
         // Arrange
@@ -132,22 +117,17 @@ class UploadServiceTest {
         long almostFull = (1024L * 1024L * 1024L) - 10;
         when(s3Service.getUserFolderSize(userId)).thenReturn(almostFull);
 
-        // Act & Assert
-        // CHANGED: Expect StorageQuotaExceededException instead of BusinessException
+
         StorageQuotaExceededException exception = assertThrows(StorageQuotaExceededException.class, () ->
                 uploadService.processFile(fileStream, fileName, userId, mockJwt)
         );
 
-        // Verify the message contains the expected error text
         assertTrue(exception.getMessage().contains("Storage quota exceeded") ||
                 exception.getMessage().contains("quota"));
 
         verify(s3Service, never()).uploadFile(anyString(), any());
     }
 
-    /**
-     * Test Case UP-03: Enforce Content Policy (Security Violation)
-     */
     @Test
     void processFile_ShouldRejectAndBan_WhenUnsafeContentDetected() throws Exception {
         // Arrange
@@ -159,7 +139,7 @@ class UploadServiceTest {
                 .thenReturn(Map.of("security_status", "unsafe", "rejection_reason", "Malware detected"));
 
         // Act & Assert
-        // Expect BusinessException as seen in your logs
+
         BusinessException exception = assertThrows(BusinessException.class, () ->
                 uploadService.processFile(fileStream, fileName, userId, mockJwt)
         );
@@ -170,9 +150,7 @@ class UploadServiceTest {
         verify(s3Service, never()).uploadFile(anyString(), any());
     }
 
-    /**
-     * Test Case UP-04: Reject Upload from Banned User
-     */
+
     @Test
     void processFile_ShouldFastFail_WhenUserIsBanned() {
         // Arrange
@@ -180,7 +158,7 @@ class UploadServiceTest {
         InputStream fileStream = new ByteArrayInputStream("data".getBytes());
 
         // Act & Assert
-        // Expect BusinessException immediately
+
         BusinessException exception = assertThrows(BusinessException.class, () ->
                 uploadService.processFile(fileStream, "any.txt", userId, mockJwt)
         );
@@ -192,21 +170,17 @@ class UploadServiceTest {
         verifyNoInteractions(s3Service);
     }
 
-    /**
-     * Test Case UP-06: MIME Type Fallback Logic
-     */
+
     @Test
     void processFile_ShouldFallbackExtension_WhenTikaFails() throws Exception {
-        // Arrange
+
         String fileName = "holiday_video.mp4";
-        // Use random bytes so Tika (hopefully) detects binary/octet-stream, not "text"
+
         byte[] binaryData = new byte[] {0, 1, 2, 3, 4, 5};
         InputStream fileStream = new ByteArrayInputStream(binaryData);
 
         when(redisBanService.isUserBanned(userId)).thenReturn(false);
 
-        // RELAXED STUBBING: Use anyString() for fileType to avoid "Strict stubbing argument mismatch"
-        // Then verify the actual call later
         when(securityService.checkFileSecurity(any(), eq(fileName), anyString()))
                 .thenReturn(Map.of("security_status", "safe"));
 
@@ -220,10 +194,9 @@ class UploadServiceTest {
         ProcessedDocument result = uploadService.processFile(fileStream, fileName, userId, mockJwt);
 
         // Assert
-        // Verify that "video" was eventually determined (either by Tika or Fallback)
+
         assertEquals("video", result.getFileType());
 
-        // Verify specifically that Security Service was called with "video" (Fallback logic)
         verify(securityService).checkFileSecurity(any(), eq(fileName), eq("video"));
     }
 }

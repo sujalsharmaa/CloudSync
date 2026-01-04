@@ -10,8 +10,6 @@ import java.util.List;
 @Repository
 public interface FileMetadataRepository extends ElasticsearchRepository<FileMetadata, String>  {
 
-
-    // Corrected to return a List<FileMetadata>
     List<FileMetadata> findByTags(String tag);
 
 @Query("{\"bool\": {\"must\": [{\"match\": {\"userId\": \"?0\"}}, {\"term\": {\"isMovedToRecycleBin\": false}}]}}")
@@ -23,10 +21,8 @@ List<FileMetadata> findByuserId(String userId);
     @Query("{\"bool\": {\"must\": [{\"match\": {\"userId\": \"?0\"}}, {\"term\": {\"isMovedToRecycleBin\": true}}]}}")
 List<FileMetadata> findRecycledFilesByuserId(String userId);
 
-    // Corrected to return a List<FileMetadata>
     List<FileMetadata> findByCategories(String category);
 
-    // Corrected to return a List<FileMetadata>
     @Query("{\"bool\": {\"must\": [{\"match\": {\"summary\": \"?0\"}}, {\"term\": {\"isMovedToRecycleBin\": false}}]}}")
     List<FileMetadata> searchBySummary(String query);
 

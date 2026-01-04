@@ -4,7 +4,6 @@ import com.tags_generation_service.tags_generation_service.Model.FileMetadataPos
 import com.tags_generation_service.tags_generation_service.Repository.FileMetadataPostgresRepository;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
@@ -24,7 +23,6 @@ import java.util.*;
 public class MetadataProcessingService {
 
     private final Map<String, ChatLanguageModel> specializedModels;
-    private final EmbeddingModel embeddingModel;
     private final S3Service s3Service;
     private final PostgresService postgresService;
     private final QueueService queueService;
@@ -44,7 +42,6 @@ public class MetadataProcessingService {
     private String systemPromptText;
     private String systemPromptImage;
 
-    /* -------------------- INIT -------------------- */
 
     @PostConstruct
     void loadPrompts() {
@@ -60,7 +57,6 @@ public class MetadataProcessingService {
         }
     }
 
-    /* -------------------- PUBLIC API -------------------- */
 
     public void processMetadataRequest(
             String fileName,
@@ -89,7 +85,6 @@ public class MetadataProcessingService {
         }
     }
 
-    /* -------------------- CORE LOGIC -------------------- */
 
     private void saveMetadata(
             String fileName,
@@ -134,7 +129,6 @@ public class MetadataProcessingService {
         queueService.publishFileRequest(metadata);
     }
 
-    /* -------------------- LLM -------------------- */
 
     private Map<String, Object> analyzeDocument(ChatLanguageModel llm, String content, String fileType) {
         String truncated = truncate(content);
@@ -154,7 +148,6 @@ public class MetadataProcessingService {
         return parseResponse(llm.generate(message).content().text());
     }
 
-    /* -------------------- HELPERS -------------------- */
 
     private ChatLanguageModel selectLLM(String fileType) {
         return Optional.ofNullable(specializedModels.get(fileType))

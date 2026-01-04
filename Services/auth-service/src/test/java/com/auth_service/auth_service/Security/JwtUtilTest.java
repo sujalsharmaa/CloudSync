@@ -1,14 +1,9 @@
 // Services/auth-service/src/test/java/com/auth_service/auth_service/Security/JwtUtilTest.java
 package com.auth_service.auth_service.Security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.security.Key;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,58 +22,41 @@ class JwtUtilTest {
 
     @Test
     void generateToken_ShouldReturnValidToken() {
-        // Arrange
         String email = "test@example.com";
         Long userId = 1L;
         String name = "Test User";
-
-        // Act
         String token = jwtUtil.generateToken(email, userId, name);
-
-        // Assert
         assertNotNull(token);
         assertFalse(token.isEmpty());
     }
 
     @Test
     void getEmailFromToken_ShouldReturnCorrectEmail() {
-        // Arrange
         String email = "test@example.com";
         Long userId = 1L;
         String name = "Test User";
         String token = jwtUtil.generateToken(email, userId, name);
 
-        // Act
         String extractedEmail = jwtUtil.getEmailFromToken(token);
 
-        // Assert
         assertEquals(email, extractedEmail);
     }
 
     @Test
     void getUserIdFromToken_ShouldReturnCorrectUserId() {
-        // Arrange
+
         String email = "test@example.com";
         Long userId = 123L;
         String name = "Test User";
         String token = jwtUtil.generateToken(email, userId, name);
-
-        // Act
         Long extractedUserId = jwtUtil.getUserIdFromToken(token);
-
-        // Assert
         assertEquals(userId, extractedUserId);
     }
 
     @Test
     void validateToken_ValidToken_ShouldReturnTrue() {
-        // Arrange
         String token = jwtUtil.generateToken("test@example.com", 1L, "Test");
-
-        // Act
         boolean isValid = jwtUtil.validateToken(token);
-
-        // Assert
         assertTrue(isValid);
     }
 

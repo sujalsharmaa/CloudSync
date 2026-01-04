@@ -6,5 +6,5 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @Configuration
 @EnableAspectJAutoProxy
 public class AopConfig {
-    // AOP is now enabled for all aspects
+
 }

@@ -1,10 +1,6 @@
 package com.upload_download_rag_pipeline.upload_download_rag_pipeline.Exception;
 
 import org.springframework.http.HttpStatus;
-
-/**
- * Custom business exception
- */
 public class BusinessException extends RuntimeException {
     private final HttpStatus status;
 

@@ -29,7 +29,6 @@ public class FileControllers {
 
     @DeleteMapping("/MoveToRecycleBin")
     public ResponseEntity<Boolean> moveToRecycleBin(@RequestBody List<UUID> fileIds, @AuthenticationPrincipal Jwt jwt) {
-        // Renamed variable to standard java naming convention (camelCase)
         Boolean response = moveToRecycleBinAndRestoreService.moveToRecycleBin(fileIds);
         return ResponseEntity.ok(response);
     }
@@ -42,7 +41,6 @@ public class FileControllers {
 
     @PostMapping("/star/{fileId}")
     public ResponseEntity<Boolean> updateStarStatus(@PathVariable UUID fileId, @RequestBody Boolean isStarred, @AuthenticationPrincipal Jwt jwt) {
-        // Refactored to throw exception if not found
         Boolean success = starService.UpdateStar(fileId, isStarred);
         if (!success) {
             throw new ResourceNotFoundException("File", "id", fileId);
@@ -60,7 +58,6 @@ public class FileControllers {
             byte[] zipBytes = downloadFileService.downloadAndZipFiles(fileIds);
 
             if (zipBytes.length == 0) {
-                // Or throw ResourceNotFoundException if you prefer 404
                 throw new BusinessException("Selected files could not be found or downloaded.");
             }
 

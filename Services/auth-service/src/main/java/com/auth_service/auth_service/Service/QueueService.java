@@ -1,5 +1,4 @@
-package com.auth_service.auth_service.Service;// tags-generation-service/Service/QueueService.java
-// (no changes, just for context)
+package com.auth_service.auth_service.Service;
 
 
 import com.auth_service.auth_service.DTO.WelcomeEmailNotification;

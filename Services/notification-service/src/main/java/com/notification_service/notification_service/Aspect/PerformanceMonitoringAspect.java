@@ -9,9 +9,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
-/**
- * Aspect for monitoring performance metrics using Micrometer
- */
 @Slf4j
 @Aspect
 @Component
@@ -20,9 +17,6 @@ public class PerformanceMonitoringAspect {
 
     private final MeterRegistry meterRegistry;
 
-    /**
-     * Monitor method execution time and record metrics
-     */
     @Around("@annotation(com.common.annotation.MonitorPerformance) || " +
             "execution(* com..Controllers..*(..)) || " +
             "execution(* com..Service..*(..))")

@@ -6,8 +6,6 @@ import com.tags_generation_service.tags_generation_service.Repository.FileMetada
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -24,7 +22,6 @@ public class StarService {
         file.setIsStarred(isStarredStatus);
         fileMetadataPostgresRepository.save(file);
 
-        // Asynchronous operation
         queueService.publishFileRequest(file);
 
         log.info("Successfully updated star status for file: {}", fileId);

@@ -5,7 +5,6 @@ import com.tags_generation_service.tags_generation_service.Repository.FileMetada
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -16,19 +15,12 @@ public class MoveToRecycleBinAndRestoreService {
 
     private final FileMetadataPostgresRepository fileMetadataPostgresRepository;
     private final QueueService queueService;
-
-    /**
-     * Move given files to recycle bin.
-     * @param fileIds list of file UUIDs
-     * @return number of files successfully moved
-     */
     @Transactional
     public Boolean moveToRecycleBin(List<UUID> fileIds) {
         if (fileIds == null || fileIds.isEmpty()) {
             return false;
         }
 
-        // Fetch all existing files for the given IDs
         List<FileMetadataPostgres> existingFiles = new ArrayList<>();
         fileMetadataPostgresRepository.findAllById(fileIds).forEach(existingFiles::add);
 
@@ -36,14 +28,11 @@ public class MoveToRecycleBinAndRestoreService {
             return false;
         }
 
-        // Mark each as moved and publish to queue
         for (FileMetadataPostgres file : existingFiles) {
             file.setIsMovedToRecycleBin(true);
-            // publish updated file to ES update queue (do this before/after save based on your design)
             queueService.publishFileRequest(file);
         }
 
-        // Persist changes in batch
         fileMetadataPostgresRepository.saveAll(existingFiles);
 
         return true;
@@ -55,7 +44,6 @@ public class MoveToRecycleBinAndRestoreService {
             return false;
         }
 
-        // Fetch all existing files for the given IDs
         List<FileMetadataPostgres> existingFiles = new ArrayList<>();
         fileMetadataPostgresRepository.findAllById(fileIds).forEach(existingFiles::add);
 
@@ -63,14 +51,11 @@ public class MoveToRecycleBinAndRestoreService {
             return false;
         }
 
-        // Mark each as moved and publish to queue
         for (FileMetadataPostgres file : existingFiles) {
             file.setIsMovedToRecycleBin(false);
-            // publish updated file to ES update queue (do this before/after save based on your design)
             queueService.publishFileRequest(file);
         }
 
-        // Persist changes in batch
         fileMetadataPostgresRepository.saveAll(existingFiles);
 
         return true;

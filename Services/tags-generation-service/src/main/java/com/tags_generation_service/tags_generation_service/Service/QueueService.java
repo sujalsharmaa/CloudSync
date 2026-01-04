@@ -1,5 +1,4 @@
-// tags-generation-service/Service/QueueService.java
-// (no changes, just for context)
+
 package com.tags_generation_service.tags_generation_service.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -10,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service

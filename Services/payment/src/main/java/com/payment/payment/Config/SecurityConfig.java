@@ -25,19 +25,18 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    // Wire JwtDecoder into the security chain so the provider uses the same decoder
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtAuthenticationConverter jwtAuthenticationConverter,
                                                    JwtDecoder jwtDecoder) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable) // Disabling CSRF is also necessary for webhooks
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // --- THIS IS THE FIX ---
-                        // Allow anonymous POST requests to the Stripe webhook endpoint
+
                         .requestMatchers(HttpMethod.POST, "/stripe/webhook").permitAll()
                         .requestMatchers("/actuator/**",
                                 "/v3/api-docs/**",
@@ -57,7 +56,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // HS256 JwtDecoder — secret must come from env/secret manager in prod
+
     @Bean
     public JwtDecoder jwtDecoder(@Value("${app.jwt.secret}") String secret) {
         if (secret == null || secret.isBlank()) {
@@ -67,7 +66,6 @@ public class SecurityConfig {
         return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
     }
 
-    // Map JWT claims to Spring Authorities and set principal name (sub)
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -84,16 +82,15 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow both localhost (development) and production domains
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",           // Local development
-                "https://drive.sujalsharma.in"     // Frontend origin
+                "http://localhost:5173",
+                "https://drive.sujalsharma.in"
         ));
 
-        // Allow all necessary HTTP methods
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
-        // Allow necessary headers for CORS preflight
+
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
@@ -101,16 +98,14 @@ public class SecurityConfig {
                 "X-Requested-With"
         ));
 
-        // Expose any custom response headers if needed
+
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type"
         ));
 
-        // Allow credentials (cookies, authorization headers)
         configuration.setAllowCredentials(true);
 
-        // Cache preflight requests for 1 hour
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

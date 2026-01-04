@@ -1,8 +1,5 @@
 package com.tags_generation_service.tags_generation_service.Exception;
 
-/**
- * Resource not found exception
- */
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {
         super(message);

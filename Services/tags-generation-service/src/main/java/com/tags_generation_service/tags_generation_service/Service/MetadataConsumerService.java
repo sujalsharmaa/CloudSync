@@ -1,6 +1,5 @@
 package com.tags_generation_service.tags_generation_service.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +16,9 @@ public class MetadataConsumerService {
     private final MetadataProcessingService metadataProcessingService;
     private final ObjectMapper objectMapper;
 
-    /**
-     * This method listens for new messages on the Kafka topic and processes them.
-     */
     @KafkaListener(topics = "file-metadata-requests", groupId = "rag-pipeline-group")
     public void listen(String message) throws Exception {
         log.info("Received message from Kafka: {}", message);
-            // Parse JSON message using ObjectMapper instead of JSONObject
             Map<String, Object> map = objectMapper.readValue(message, Map.class);
 
             String fileName = (String) map.get("fileName");
@@ -35,7 +30,6 @@ public class MetadataConsumerService {
 
             log.info("Processing file metadata from topic 'file-metadata-requests': {}", fileName);
 
-            // Trigger the core processing logic
             metadataProcessingService.processMetadataRequest(fileName, fileType, s3Location, userId, fileSize, email);
 
     }

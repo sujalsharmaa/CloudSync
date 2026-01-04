@@ -25,12 +25,7 @@ public class AuthController {
 
     @GetMapping("/user")
     public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal User user) {
-        // If security filter chain is working correctly, user shouldn't be null here for authenticated endpoints.
-        // However, if it is null, we can let the GlobalExceptionHandler handle a custom exception or standard Security exception.
         if (user == null) {
-            // You can throw a BusinessException or rely on Spring Security's own handling.
-            // For now, keeping your manual check but standardized could look like:
-            // throw new BadCredentialsException("User is not authenticated");
             return ResponseEntity.status(401).body("Unauthorized");
         }
 
@@ -46,7 +41,6 @@ public class AuthController {
 
     @GetMapping("/getStoragePlan/{userId}")
     public ResponseEntity<Plan> getUserStoragePlan(@PathVariable Long  userId) {
-        // Refactored to throw ResourceNotFoundException
         User foundUser = userService.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User"));
 
@@ -55,7 +49,6 @@ public class AuthController {
 
     @GetMapping("/getStoragePlanAndConsumption")
     public ResponseEntity<StoragePlanResponse> getUserStoragePlanAndConsumption(@AuthenticationPrincipal User user) {
-        // Refactored to throw ResourceNotFoundException
         User foundUser = userService.findById(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", user.getId()));
 

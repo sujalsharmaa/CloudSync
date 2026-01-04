@@ -1,6 +1,4 @@
-package com.auth_service.auth_service.Controller;// Integration Test Example
-// Services/auth-service/src/test/java/com/auth_service/auth_service/Controllers/AuthControllerIntegrationTest.java
-
+package com.auth_service.auth_service.Controller;
 import com.auth_service.auth_service.Entity.type.User;
 import com.auth_service.auth_service.Repository.UserRepository;
 import com.auth_service.auth_service.Security.JwtUtil;
@@ -36,7 +34,6 @@ class AuthControllerIntegrationTest {
 
     @Test
     void getCurrentUser_WithValidToken_ShouldReturnUserInfo() throws Exception {
-        // Arrange
         User user = new User();
         user.setEmail("test@example.com");
         user.setName("Test User");
@@ -44,7 +41,7 @@ class AuthControllerIntegrationTest {
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getName());
 
-        // Act & Assert
+
         mockMvc.perform(get("/api/auth/user")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
@@ -54,7 +51,7 @@ class AuthControllerIntegrationTest {
 
     @Test
     void getCurrentUser_WithoutToken_ShouldReturnUnauthorized() throws Exception {
-        // Act & Assert
+
         mockMvc.perform(get("/api/auth/user"))
                 .andExpect(status().isUnauthorized());
     }

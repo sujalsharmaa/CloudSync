@@ -19,7 +19,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final QueueService queueService;
 
-    // Evict the cache when user details are updated so the next read fetches fresh data
     @CacheEvict(value = "user_email", key = "#oAuth2User.getAttribute('email')")
     public User processOAuth2User(OAuth2User oAuth2User) {
         String email = oAuth2User.getAttribute("email");
@@ -47,7 +46,6 @@ public class UserService {
         }
     }
 
-    // Cache the result. The key is the email address.
     @Cacheable(value = "user_email", key = "#email")
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);

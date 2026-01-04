@@ -1,4 +1,3 @@
-// Services/tags-generation-service/src/test/java/com/tags_generation_service/tags_generation_service/Service/DeletePermanentlyTest.java
 package com.tags_generation_service.tags_generation_service.Service;
 
 import com.tags_generation_service.tags_generation_service.Model.FileMetadataPostgres;
@@ -59,13 +58,11 @@ class DeletePermanentlyTest {
         // Arrange
         when(repository.findAllById(fileIds)).thenReturn(files);
 
-        // Act
         Boolean result = deletePermanently.DeleteFilePermanently(fileIds);
 
-        // Assert
+
         assertTrue(result);
 
-        // ✅ FIX: Change times(1) to times(2) because files and thumbnails are deleted separately
         verify(s3Service, times(2)).deleteFiles(anyList());
 
         verify(repository, times(1)).deleteAllById(fileIds);

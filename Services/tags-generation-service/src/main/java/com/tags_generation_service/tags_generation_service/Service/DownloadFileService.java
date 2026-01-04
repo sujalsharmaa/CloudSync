@@ -46,10 +46,7 @@ public class DownloadFileService {
                     zipOut.closeEntry();
                 } catch (IOException e) {
                     log.error("Failed to download or zip file {}: {}", file.getFileName(), e.getMessage());
-                    // We can choose to skip this file (partial success) or fail the whole request.
-                    // For now, logging and continuing is a valid strategy for bulk download,
-                    // but if strict consistency is needed:
-                    // throw new BusinessException("Failed to download file: " + file.getFileName());
+
                 }
             }
             zipOut.finish();

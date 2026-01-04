@@ -10,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,7 +35,6 @@ class UserServiceTest {
         oAuth2User = mock(OAuth2User.class);
     }
 
-    // Helper method to setup the OAuth2User mock for relevant tests
     private void setupOAuth2UserMock() {
         when(oAuth2User.getAttribute("email")).thenReturn("test@example.com");
         when(oAuth2User.getAttribute("name")).thenReturn("Test User");

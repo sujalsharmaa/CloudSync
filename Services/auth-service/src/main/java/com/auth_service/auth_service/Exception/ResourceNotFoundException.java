@@ -1,8 +1,5 @@
 package com.auth_service.auth_service.Exception;
 
-/**
- * Resource not found exception
- */
 public class ResourceNotFoundException extends RuntimeException {
     public ResourceNotFoundException(String message) {
         super(message);

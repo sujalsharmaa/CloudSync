@@ -30,7 +30,6 @@ public class SecurityService {
     private static final int MAX_CONTENT_LENGTH = 3000;
     private static final String TRUNCATION_INDICATOR = "...";
 
-    // Inject prompt from resources
     @Value("classpath:prompts/security-check.txt")
     private Resource securityPromptResource;
     private String systemPrompt;
@@ -55,7 +54,7 @@ public class SecurityService {
         }
         return content.substring(0, MAX_CONTENT_LENGTH) + TRUNCATION_INDICATOR;
     }
-    // Create a POJO to represent the LLM's JSON response
+
     private static class SecurityResponse {
         public String security_status;
         public String rejection_reason;
@@ -67,13 +66,9 @@ public class SecurityService {
 
         try {
             if ("image".equals(fileType)) {
-                // 1. Handle Images with Multimodal LLM
                 return analyzeImageForSecurity(llm, fileStream);
 
             } else if ("video".equals(fileType) || "audio".equals(fileType)) {
-                // 2. (FIX) Explicitly handle video/audio
-                // We skip content analysis for these types for now,
-                // as Tika will crash and we don't have a video-analysis model.
                 log.info("Skipping text content analysis for media type: {}", fileType);
 
                 Map<String, Object> result = new HashMap<>();
@@ -82,14 +77,12 @@ public class SecurityService {
                 return result;
 
             } else {
-                // 3. Handle Text-Based Files (pdf, doc, txt, code, etc.)
-                // This block is now safe, as videos and audio are already handled.
                 String content = extractContent(fileStream);
                 return analyzeDocumentForSecurity(llm, content, fileType);
             }
         } catch (Exception e) {
             log.error("Security check failed for file: {}", fileName, e);
-            // Return a default error status
+
             Map<String, Object> errorResult = new HashMap<>();
             errorResult.put("security_status", "error");
             errorResult.put("rejection_reason", "An internal error occurred during the security check.");
@@ -124,7 +117,7 @@ public class SecurityService {
     private Map<String, Object> parseJsonSecurityResponse(String response) {
         String sanitizedResponse = response.trim();
 
-        // Check for and remove markdown code block wrappers
+
         if (sanitizedResponse.startsWith("```json")) {
             sanitizedResponse = sanitizedResponse.substring("```json".length()).trim();
         }
@@ -133,14 +126,13 @@ public class SecurityService {
         }
 
         try {
-            // Use ObjectMapper to safely and robustly parse the JSON
+
             SecurityResponse securityResponse = objectMapper.readValue(sanitizedResponse, SecurityResponse.class);
 
             Map<String, Object> result = new HashMap<>();
             result.put("security_status", securityResponse.security_status);
             result.put("rejection_reason", securityResponse.rejection_reason);
 
-            // Sanity check: if status is not safe or unsafe, default to unsafe
             if (!"safe".equals(result.get("security_status")) && !"unsafe".equals(result.get("security_status"))) {
                 log.warn("LLM returned an unexpected status: {}", result.get("security_status"));
                 result.put("security_status", "error");
@@ -162,7 +154,6 @@ public class SecurityService {
         }
     }
 
-    // Helper methods
     private String extractContent(InputStream stream) throws Exception {
         return tika.parseToString(stream);
     }

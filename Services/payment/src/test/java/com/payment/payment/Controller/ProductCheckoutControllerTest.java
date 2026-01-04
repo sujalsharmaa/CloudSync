@@ -29,21 +29,14 @@ class ProductCheckoutControllerTest {
     @InjectMocks
     private ProductCheckoutController checkoutController;
 
-    /**
-     * Test Case PY-01: Checkout Session Creation
-     */
     @Test
     void checkoutProducts_ShouldReturnStripeUrl_WhenRequestIsValid() {
-        // Arrange
+
         ServiceRequest request = new ServiceRequest();
         request.setPlan(Plan.valueOf("PRO"));
         request.setAmount(1000L); // $10.00
-
-        // Mock JWT Principal
         Jwt mockJwt = mock(Jwt.class);
         when(mockJwt.getClaims()).thenReturn(Map.of("userId", "user-123"));
-
-        // Mock Stripe Service response
         StripeResponse mockStripeResponse = StripeResponse.builder()
                 .status("SUCCESS")
                 .sessionId("sess_12345")
@@ -52,10 +45,9 @@ class ProductCheckoutControllerTest {
 
         when(stripeService.checkoutProducts(request, mockJwt)).thenReturn(mockStripeResponse);
 
-        // Act
+
         ResponseEntity<StripeResponse> response = checkoutController.checkoutProducts(request, mockJwt);
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("SUCCESS", response.getBody().getStatus());

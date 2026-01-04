@@ -2,9 +2,6 @@ package com.payment.payment.Exception;
 
 import org.springframework.http.HttpStatus;
 
-/**
- * Custom business exception
- */
 public class BusinessException extends RuntimeException {
     private final HttpStatus status;
 

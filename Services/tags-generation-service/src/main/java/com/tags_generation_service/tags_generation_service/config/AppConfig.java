@@ -19,10 +19,8 @@ public class AppConfig {
 
     @Bean
     public CommonErrorHandler errorHandler(KafkaTemplate<Object, Object> template) {
-        // This automatically sends failed messages to "original-topic.DLT"
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(template);
 
-        // Retry 3 times (1s interval) before sending to DLQ
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
                 recoverer,
                 new FixedBackOff(1000L, 3)

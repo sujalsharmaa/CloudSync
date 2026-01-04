@@ -32,7 +32,7 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Enumerated(EnumType.STRING)   // ✅ store enum as text ("DEFAULT","BASIC" etc.)
+    @Enumerated(EnumType.STRING)
     @Column(name = "plan", nullable = false)
-    private Plan plan = Plan.DEFAULT; // ✅ default value in Java (not SQL)
+    private Plan plan = Plan.DEFAULT;
 }

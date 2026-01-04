@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -54,7 +53,6 @@ public class StripeService {
 
         if (serviceRequest.getPlan() == null) {
             logger.error("Plan is required.");
-            // Throw BusinessException to be handled by GlobalExceptionHandler
             throw new BusinessException("Plan is required and must be one of: BASIC, PRO, TEAM.");
         }
 
@@ -88,7 +86,6 @@ public class StripeService {
             payment = paymentRepository.save(payment);
         } catch (Exception e) {
             logger.error("Failed to save initial pending payment record.", e);
-            // Throw generic BusinessException or a custom DatabaseException
             throw new BusinessException("Internal error: Failed to initiate payment record.");
         }
 
@@ -123,7 +120,6 @@ public class StripeService {
             payment.setStatus("FAILED_SESSION_CREATION");
             paymentRepository.save(payment);
 
-            // Throw BusinessException to return clean error JSON
             throw new BusinessException("Payment session could not be created: " + e.getMessage());
         }
     }
@@ -133,15 +129,12 @@ public class StripeService {
         throw new BusinessException("Payment service is temporarily unavailable. Please try again later.");
     }
 
-    // handleSuccessfulPayment remains the same...
     public void handleSuccessfulPayment(Session session) {
         String stripeSessionId = session.getId();
         Optional<Payment> paymentOpt = paymentRepository.findByStripeSessionId(stripeSessionId);
 
         if (paymentOpt.isEmpty()) {
             logger.error("Attempted to handle successful payment for unknown session ID: {}", stripeSessionId);
-            // Since this is a webhook/internal call, logging is usually sufficient,
-            // but you could throw ResourceNotFoundException if you wanted to NACK the webhook.
             return;
         }
 

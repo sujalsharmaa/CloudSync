@@ -1,7 +1,7 @@
-// search_service/Dto/UserFileMetadata.java
+
 package com.search_service.search_service.Dto;
 
-import lombok.Data; // Ensure you have getters and setters
+import lombok.Data;
 import java.util.Date;
 
 @Data
