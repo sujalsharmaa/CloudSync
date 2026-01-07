@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: cloudsync-auth-service-container
-          image: sujalsharma/auth-service:latest
+          image: sujalsharma/auth-service:1
           ports:
             - containerPort: 8080
           env:

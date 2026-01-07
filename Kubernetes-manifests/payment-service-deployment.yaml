@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: cloudsync-payment-service-container
-          image: sujalsharma/payment-service:latest
+          image: sujalsharma/payment-service:1
           ports:
             - containerPort: 8084
           env:

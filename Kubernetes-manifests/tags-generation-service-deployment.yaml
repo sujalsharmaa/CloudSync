@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: cloudsync-tags-generation-service-container
-          image: sujalsharma/tags-generation-service:latest
+          image: sujalsharma/tags-generation-service:1
           ports:
             - containerPort: 8082
           env:

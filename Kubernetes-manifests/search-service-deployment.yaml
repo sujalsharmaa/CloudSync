@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: cloudsync-search-service-container
-          image: sujalsharma/search-service:latest
+          image: sujalsharma/search-service:1
           ports:
             - containerPort: 8085
           env:

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: cloudsync-notification-service-container
-          image: sujalsharma/notification-service:latest
+          image: sujalsharma/notification-service:1
           ports:
             - containerPort: 8086
           env:
