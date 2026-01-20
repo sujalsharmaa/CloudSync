@@ -33,10 +33,10 @@ public class MetadataProcessingService {
 
     private final Tika tika = new Tika();
 
-    @Value("classpath:prompts/metadata-analysis-text.txt")
+    @Value("classpath:Prompts/metadata-analysis-text.txt")
     private Resource textPromptResource;
 
-    @Value("classpath:prompts/metadata-analysis-image.txt")
+    @Value("classpath:Prompts/metadata-analysis-image.txt")
     private Resource imagePromptResource;
 
     private String systemPromptText;
