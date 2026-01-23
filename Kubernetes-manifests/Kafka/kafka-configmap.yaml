@@ -48,6 +48,8 @@ spec:
               # "kafka-0.kafka-service" is the stable DNS name: <pod-name>.<service-name>
               value: "PLAINTEXT://kafka-0.kafka-service:9092"
             # Settings for a single-node cluster
+            - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+              value: "1"
             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
               value: "1"
             - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
