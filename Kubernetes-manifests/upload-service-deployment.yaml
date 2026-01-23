@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: cloudsync-upload-service-container
-          image: sujalsharma/upload-download-rag-pipelin:1
+          image: sujalsharma/upload-download-rag-pipelin:2
           ports:
             - containerPort: 8083
           env:
