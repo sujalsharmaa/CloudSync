@@ -57,19 +57,17 @@ spec:
 # --------------------------------------------------
 
 apiVersion: v1
-kind: PersistentVolume
+kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pv3
-
+  name: cloudsync-pvc3
 spec:
-  capacity:
-    storage: 1Gi
-  volumeMode: Filesystem
   accessModes:
-    - ReadWriteMany
-  storageClassName: "standard"
-  hostPath:
-    path: /data/db
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi
+
 
 
 # --------------------------------------------------
