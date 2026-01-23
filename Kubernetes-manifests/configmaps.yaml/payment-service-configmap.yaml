@@ -8,7 +8,7 @@ data:
     server:
       port: 8084
 
-    redirect_url_success: http://localhost:5173/
+    redirect_url_success: https://drive.sujalsharma.in/
 
     spring:
       application:
