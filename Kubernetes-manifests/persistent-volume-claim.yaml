@@ -1,67 +1,47 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce  # Changed from Many to Once for GCE Disk compatibility
-  storageClassName: "standard"
-  resources:
-    requests:
-      storage: 1Gi
-
----
-
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cloudsync-pvc1
+  name: cloudsync-pvc1   # postgres
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard"
+  storageClassName: standard
   resources:
     requests:
-      storage: 1Gi
-
+      storage: 5Gi
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pvc2
+  name: cloudsync-pvc2   # kafka
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard"
+  storageClassName: standard
   resources:
     requests:
-      storage: 1Gi
-
+      storage: 5Gi
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pvc3
+  name: cloudsync-pvc3   # elasticsearch
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard"
+  storageClassName: standard
   resources:
     requests:
-      storage: 1Gi
-
+      storage: 10Gi
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pvc4
+  name: cloudsync-pvc4   # redis (optional persistence)
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard"
+  storageClassName: standard
   resources:
     requests:
-      storage: 1Gi
+      storage: 2Gi
