@@ -30,7 +30,7 @@ public class SecurityService {
     private static final int MAX_CONTENT_LENGTH = 3000;
     private static final String TRUNCATION_INDICATOR = "...";
 
-    @Value("classpath:prompts/security-check.txt")
+    @Value("classpath:Prompts/security-check.txt")
     private Resource securityPromptResource;
     private String systemPrompt;
 
