@@ -139,9 +139,10 @@ public class MetadataProcessingService {
     private Map<String, Object> analyzeImage(ChatLanguageModel llm, InputStream stream) throws Exception {
         byte[] bytes = stream.readAllBytes();
         String base64 = Base64.getEncoder().encodeToString(bytes);
+        String mimeType = tika.detect(bytes);
 
         UserMessage message = UserMessage.from(
-                ImageContent.from(base64, "image/*"),
+                ImageContent.from(base64, mimeType),
                 TextContent.from(systemPromptImage)
         );
 

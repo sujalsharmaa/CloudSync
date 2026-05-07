@@ -36,26 +36,26 @@ public class SearchService {
         log.info("Evicting all file caches for user: {}", userId);
     }
 
-    @Cacheable(value = "userFiles", key = "#userId")
+   // @Cacheable(value = "userFiles", key = "#userId")
     public List<UserFileMetadata> searchByQuery(String query,String userId) {
         log.info("Performing semantic search: {}", query);
         List<FileMetadata> files = repository.searchAllByuserId(query,userId);
         return fileMetadataMapper.toUserFileMetadataList(files);
     }
-    @Cacheable(value = "starredFiles", key = "#userId")
+   // @Cacheable(value = "starredFiles", key = "#userId")
     public List<UserFileMetadata> getStarredFiles(String userId) {
         List<FileMetadata> files = repository.searchAllStarredByuserId(userId);
         return fileMetadataMapper.toUserFileMetadataList(files);
     }
 
-    @Cacheable(value = "recentFiles", key = "#userId")
+   // @Cacheable(value = "recentFiles", key = "#userId")
     public List<UserFileMetadata> searchRecentFilesByUserId(String userId) {
 
         List<FileMetadata> files = repository.searchAllRecentByuserId(userId);
         return fileMetadataMapper.toUserFileMetadataList(files);
     }
 
-    @Cacheable(value = "recycledFiles", key = "#userId")
+  //  @Cacheable(value = "recycledFiles", key = "#userId")
     public List<UserFileMetadata> searchRecycledFilesByQuery(String query,String userId) {
         log.info("Performing semantic search: {}", query);
         List<FileMetadata> files = repository.searchAllRecycledFilesByuserId(query,userId);
@@ -86,7 +86,7 @@ public class SearchService {
         return results.stream().distinct().collect(Collectors.toList());
     }
 
-    @Cacheable(value = "userTags", key = "#userId")
+   // @Cacheable(value = "userTags", key = "#userId")
     public UserTagsAndCategories getAllUniqueTagsAndCategoriesByUserId(String userId) {
         List<FileMetadata> files = repository.findByuserId(userId);
         Map<String, String> tagsMap = new LinkedHashMap<>();
