@@ -2,26 +2,33 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
+
 spec:
   serviceName: redis
   replicas: 1
+
   selector:
     matchLabels:
       app: redis
+
   template:
     metadata:
       labels:
         app: redis
+
     spec:
       containers:
         - name: redis
           image: redis/redis-stack-server
+
           ports:
             - containerPort: 6379
+
           volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
+            - name: redis-storage
+              mountPath: /data
+
       volumes:
-        - name: cloudsync-pv
+        - name: redis-storage
           persistentVolumeClaim:
-            claimName: cloudsync-pvc
+            claimName: cloudsync-pvc4
