@@ -1,47 +1,54 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pvc   # postgres
+  name: cloudsync-pvc
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard"
+  storageClassName: standard
+  volumeName: cloudsync-pv-postgres
   resources:
     requests:
       storage: 5Gi
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pvc2   # kafka
+  name: cloudsync-pvc2
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard"
+  storageClassName: standard
+  volumeName: cloudsync-pv-kafka
   resources:
     requests:
       storage: 5Gi
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pvc3   # elasticsearch
+  name: cloudsync-pvc3
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard"
+  storageClassName: standard
+  volumeName: cloudsync-pv-elasticsearch
   resources:
     requests:
       storage: 10Gi
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: cloudsync-pvc4   # redis (optional persistence)
+  name: cloudsync-pvc4
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: "standard"
+  storageClassName: standard
+  volumeName: cloudsync-pv-redis
   resources:
     requests:
       storage: 2Gi
