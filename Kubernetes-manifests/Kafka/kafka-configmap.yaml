@@ -20,48 +20,59 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: kafka
+
 spec:
   serviceName: kafka-service
   replicas: 1
+
   selector:
     matchLabels:
       app: kafka
+
   template:
     metadata:
       labels:
         app: kafka
+
     spec:
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.0.1
+
           ports:
             - containerPort: 9092
+
           env:
             - name: KAFKA_BROKER_ID
               value: "1"
+
             - name: KAFKA_ZOOKEEPER_CONNECT
-              # Connects to the Zookeeper service you created above
               value: "zookeeper-service:2181"
+
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
-              value: "PLAINTEXT:PLAINTEXT"
+              value: PLAINTEXT:PLAINTEXT
+
             - name: KAFKA_ADVERTISED_LISTENERS
-              # This is how the broker tells clients (and other brokers) to reach it.
-              # "kafka-0.kafka-service" is the stable DNS name: <pod-name>.<service-name>
-              value: "PLAINTEXT://kafka-0.kafka-service:9092"
-            # Settings for a single-node cluster
+              value: PLAINTEXT://kafka-0.kafka-service:9092
+
             - name: KAFKA_DEFAULT_REPLICATION_FACTOR
               value: "1"
+
             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
               value: "1"
+
             - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
               value: "1"
+
             - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
               value: "1"
+
           volumeMounts:
-            - name: cloudsync-pv2
-              mountPath: /data/db
+            - name: kafka-storage
+              mountPath: /var/lib/kafka/data
+
       volumes:
-        - name: cloudsync-pv2
+        - name: kafka-storage
           persistentVolumeClaim:
             claimName: cloudsync-pvc2
 
