@@ -14,8 +14,6 @@ spec:
       port: 9092
       targetPort: 9092
 ---
-# 2. Kafka StatefulSet
-# This creates a single Kafka broker pod with persistent storage
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -35,6 +33,22 @@ spec:
         app: kafka
 
     spec:
+      securityContext:
+        fsGroup: 1000
+
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+
+          command:
+            - sh
+            - -c
+            - chown -R 1000:1000 /var/lib/kafka/data
+
+          volumeMounts:
+            - name: kafka-storage
+              mountPath: /var/lib/kafka/data
+
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.0.1
@@ -74,6 +88,7 @@ spec:
       volumes:
         - name: kafka-storage
           persistentVolumeClaim:
+            claimName: cloudsync-pvc2
             claimName: cloudsync-pvc2
 
 
