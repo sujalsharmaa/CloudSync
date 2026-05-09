@@ -9,7 +9,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"    # default for azure   standard for gcp/aws
+  storageClassName: "standard"    # default for azure   standard for gcp/aws
   hostPath:
     path: /data/db
 
@@ -29,7 +29,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"
+  storageClassName: "standard"
   hostPath:
     path: /data/db
 
@@ -48,7 +48,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"
+  storageClassName: "standard"
   hostPath:
     path: /data/db
 
@@ -66,7 +66,7 @@ spec:
  volumeMode: Filesystem
  accessModes:
   - ReadWriteMany
- storageClassName: "default"
+ storageClassName: "standard"
  hostPath:
   path: /data/db
 
@@ -84,7 +84,7 @@ spec:
   volumeMode: Filesystem
   accessModes:
     - ReadWriteMany
-  storageClassName: "default"
+  storageClassName: "standard"
   hostPath:
     path: /data/db
 
