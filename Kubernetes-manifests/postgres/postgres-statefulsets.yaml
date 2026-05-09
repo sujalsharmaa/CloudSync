@@ -8,31 +8,38 @@ spec:
   selector:
     matchLabels:
       app: postgres
+
   template:
     metadata:
       labels:
         app: postgres
+
     spec:
       containers:
         - name: postgres
           image: postgres:15-alpine
+
           ports:
             - containerPort: 5432
+
           env:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_USER
+
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: postgres-secret
                   key: POSTGRES_PASSWORD
+
           volumeMounts:
-            - name: cloudsync-pv
-              mountPath: /data/db
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+
       volumes:
-        - name: cloudsync-pv
+        - name: postgres-storage
           persistentVolumeClaim:
-            claimName: cloudsync-pvc                  
+            claimName: cloudsync-pvc
