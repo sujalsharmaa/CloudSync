@@ -181,7 +181,7 @@ for (let i = 0; i < files.length; i++) {
         });
         setTimeout(() => removeUploadFile(uploadFile.id), 4000);
       }
-    });
+    };
 
     // **Wait for all upload promises to settle**
     try {
