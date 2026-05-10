@@ -185,7 +185,7 @@ for (let i = 0; i < files.length; i++) {
 
     // **Wait for all upload promises to settle**
     try {
-        await Promise.all(uploadPromises);
+      
         // This line will only run after all files have been processed
         toast({
             title: "Queue complete",
