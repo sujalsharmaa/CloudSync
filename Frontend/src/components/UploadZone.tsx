@@ -77,10 +77,11 @@ export function UploadZone() {
     setUploadFiles(prev => [...prev, ...newUploadFiles]);
 
     // Create an array of promises for each file upload
-    const uploadPromises = files.map(async (file, index) => {
-      const uploadFile = newUploadFiles[index];
-      const formData = new FormData();
-      formData.append('file', file);
+for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const uploadFile = newUploadFiles[i];
+    const formData = new FormData();
+    formData.append('file', file);
 
       try {
         const response = await axios.post<ProcessedDocument>(
